@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home,
   Presentation,
@@ -11,6 +11,25 @@ import {
   Sun,
   Monitor,
   Globe,
+  Type,
+  Image,
+  Play,
+  Square,
+  Search,
+  Undo2,
+  Redo2,
+  Copy,
+  Trash2,
+  History,
+  Keyboard,
+  Palette,
+  Layers,
+  Eye,
+  EyeOff,
+  Grid,
+  ZoomIn,
+  ZoomOut,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   CommandDialog,
@@ -23,10 +42,14 @@ import {
   CommandShortcut,
 } from '@sanctuary/ui';
 import { useStore } from '../../stores/app';
+import { useEditorStore } from '../../stores/editor';
+import { formatShortcut } from '../../hooks/useKeyboardShortcuts';
 
 interface CommandPaletteContextType {
   open: boolean;
   setOpen: (open: boolean) => void;
+  mode: 'command' | 'search' | 'slide';
+  setMode: (mode: 'command' | 'search' | 'slide') => void;
 }
 
 const CommandPaletteContext = React.createContext<CommandPaletteContextType | null>(null);
@@ -39,18 +62,71 @@ export function useCommandPalette() {
   return context;
 }
 
+// Editor context detection
+function useEditorContext() {
+  const location = useLocation();
+  const { selectedElementIds, currentSlideIndex } = useEditorStore();
+  
+  const isInEditor = location.pathname.startsWith('/editor/');
+  const hasSelection = selectedElementIds.length > 0;
+  const hasMultipleSelection = selectedElementIds.length > 1;
+  
+  return { isInEditor, hasSelection, hasMultipleSelection, currentSlideIndex };
+}
+
 export function CommandPaletteProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { commandPaletteOpen, setCommandPaletteOpen, setTheme, theme, language, setLanguage } = useStore();
+  const [mode, setMode] = useState<'command' | 'search' | 'slide'>('command');
+  
+  const { isInEditor, hasSelection } = useEditorContext();
+  
+  const {
+    recentCommands,
+    addRecentCommand,
+    setShowBibleDialog,
+    setShowSearchDialog,
+    setShowShortcutsDialog,
+    setShowPresetsDialog,
+    setShowVariantsDialog,
+    showGrid,
+    setShowGrid,
+    zoom,
+    setZoom,
+    canUndo,
+    canRedo,
+  } = useEditorStore();
+
+  // Reset mode when opening
+  useEffect(() => {
+    if (commandPaletteOpen) {
+      setMode('command');
+    }
+  }, [commandPaletteOpen]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      // Cmd/Ctrl+K for command palette
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
+        setMode('command');
         setCommandPaletteOpen(!commandPaletteOpen);
       }
+      // Cmd/Ctrl+P for global search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        e.preventDefault();
+        setMode('search');
+        setCommandPaletteOpen(true);
+      }
+      // Cmd/Ctrl+G for jump to slide (in editor)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'g' && isInEditor) {
+        e.preventDefault();
+        setMode('slide');
+        setCommandPaletteOpen(true);
+      }
     },
-    [commandPaletteOpen, setCommandPaletteOpen]
+    [commandPaletteOpen, setCommandPaletteOpen, isInEditor]
   );
 
   useEffect(() => {
@@ -59,23 +135,178 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
   }, [handleKeyDown]);
 
   const runCommand = useCallback(
-    (command: () => void) => {
+    (command: () => void, label?: string, action?: string) => {
       setCommandPaletteOpen(false);
       command();
+      if (label && action) {
+        addRecentCommand(label, action);
+      }
     },
-    [setCommandPaletteOpen]
+    [setCommandPaletteOpen, addRecentCommand]
   );
+
+  // Create new presentation
+  const createPresentation = useCallback(() => {
+    const id = `pres-${Date.now()}`;
+    navigate(`/editor/${id}`);
+  }, [navigate]);
+
+  // Get placeholder text based on mode
+  const placeholder = useMemo(() => {
+    switch (mode) {
+      case 'search': return 'Search slides, verses, songs...';
+      case 'slide': return 'Jump to slide by number or title...';
+      default: return 'Type a command or search...';
+    }
+  }, [mode]);
 
   return (
     <CommandPaletteContext.Provider
-      value={{ open: commandPaletteOpen, setOpen: setCommandPaletteOpen }}
+      value={{ open: commandPaletteOpen, setOpen: setCommandPaletteOpen, mode, setMode }}
     >
       {children}
       <CommandDialog open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen}>
-        <CommandInput placeholder="Type a command or search..." />
-        <CommandList>
+        <CommandInput placeholder={placeholder} />
+        <CommandList className="max-h-[400px]">
           <CommandEmpty>No results found.</CommandEmpty>
 
+          {/* Recent Commands - show first for quick access */}
+          {mode === 'command' && recentCommands.length > 0 && (
+            <>
+              <CommandGroup heading="Recent">
+                {recentCommands.slice(0, 5).map((cmd) => (
+                  <CommandItem
+                    key={cmd.id}
+                    onSelect={() => {
+                      // Re-trigger the action based on stored action
+                      if (cmd.action === 'insert-verse') setShowBibleDialog(true);
+                      if (cmd.action === 'global-search') setShowSearchDialog(true);
+                      if (cmd.action === 'new-presentation') createPresentation();
+                      setCommandPaletteOpen(false);
+                    }}
+                  >
+                    <History className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>{cmd.label}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+              <CommandSeparator />
+            </>
+          )}
+
+          {/* Editor-specific commands */}
+          {isInEditor && mode === 'command' && (
+            <>
+              <CommandGroup heading="Insert">
+                <CommandItem onSelect={() => runCommand(() => {}, 'Insert Text', 'insert-text')}>
+                  <Type className="mr-2 h-4 w-4" />
+                  <span>Insert Text</span>
+                  <CommandShortcut>T</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => setShowBibleDialog(true), 'Insert Verse', 'insert-verse')}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  <span>Insert Verse</span>
+                  <CommandShortcut>⌘⇧V</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => {}, 'Insert Image', 'insert-image')}>
+                  <Image className="mr-2 h-4 w-4" />
+                  <span>Insert Image</span>
+                  <CommandShortcut>I</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => {}, 'Insert Shape', 'insert-shape')}>
+                  <Square className="mr-2 h-4 w-4" />
+                  <span>Insert Shape</span>
+                  <CommandShortcut>S</CommandShortcut>
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+              
+              <CommandGroup heading="Edit">
+                <CommandItem 
+                  onSelect={() => runCommand(() => {}, 'Undo', 'undo')}
+                  disabled={!canUndo()}
+                >
+                  <Undo2 className="mr-2 h-4 w-4" />
+                  <span>Undo</span>
+                  <CommandShortcut>⌘Z</CommandShortcut>
+                </CommandItem>
+                <CommandItem 
+                  onSelect={() => runCommand(() => {}, 'Redo', 'redo')}
+                  disabled={!canRedo()}
+                >
+                  <Redo2 className="mr-2 h-4 w-4" />
+                  <span>Redo</span>
+                  <CommandShortcut>⌘⇧Z</CommandShortcut>
+                </CommandItem>
+                {hasSelection && (
+                  <>
+                    <CommandItem onSelect={() => runCommand(() => {}, 'Duplicate', 'duplicate')}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      <span>Duplicate Selection</span>
+                      <CommandShortcut>⌘D</CommandShortcut>
+                    </CommandItem>
+                    <CommandItem onSelect={() => runCommand(() => {}, 'Delete', 'delete')}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete Selection</span>
+                      <CommandShortcut>⌫</CommandShortcut>
+                    </CommandItem>
+                  </>
+                )}
+              </CommandGroup>
+              <CommandSeparator />
+
+              <CommandGroup heading="View">
+                <CommandItem onSelect={() => runCommand(() => setShowGrid(!showGrid), 'Toggle Grid', 'toggle-grid')}>
+                  <Grid className="mr-2 h-4 w-4" />
+                  <span>Toggle Grid</span>
+                  {showGrid && <span className="ml-auto text-xs">✓</span>}
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => setZoom(Math.min(200, zoom + 25)), 'Zoom In', 'zoom-in')}>
+                  <ZoomIn className="mr-2 h-4 w-4" />
+                  <span>Zoom In</span>
+                  <CommandShortcut>⌘+</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => setZoom(Math.max(25, zoom - 25)), 'Zoom Out', 'zoom-out')}>
+                  <ZoomOut className="mr-2 h-4 w-4" />
+                  <span>Zoom Out</span>
+                  <CommandShortcut>⌘-</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => setZoom(100), 'Reset Zoom', 'zoom-reset')}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  <span>Reset Zoom (100%)</span>
+                  <CommandShortcut>⌘0</CommandShortcut>
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+
+              <CommandGroup heading="Format">
+                <CommandItem onSelect={() => runCommand(() => setShowPresetsDialog(true), 'Style Presets', 'style-presets')}>
+                  <Palette className="mr-2 h-4 w-4" />
+                  <span>Apply Style Preset</span>
+                  <CommandShortcut>⌘⇧S</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => setShowVariantsDialog(true), 'Slide Variants', 'slide-variants')}>
+                  <Layers className="mr-2 h-4 w-4" />
+                  <span>Slide Variants</span>
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+
+              <CommandGroup heading="Presentation">
+                <CommandItem onSelect={() => runCommand(() => {
+                  const id = location.pathname.split('/').pop();
+                  if (id) window.open(`/present/${id}`, '_blank');
+                }, 'Present', 'present')}>
+                  <Play className="mr-2 h-4 w-4" />
+                  <span>Start Presentation</span>
+                  <CommandShortcut>⌘↵</CommandShortcut>
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+            </>
+          )}
+
+          {/* Global Navigation */}
           <CommandGroup heading="Navigation">
             <CommandItem onSelect={() => runCommand(() => navigate('/'))}>
               <Home className="mr-2 h-4 w-4" />
@@ -83,12 +314,11 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => navigate('/bible'))}>
               <BookOpen className="mr-2 h-4 w-4" />
-              <span>Bible</span>
-              <CommandShortcut>⌘B</CommandShortcut>
+              <span>Bible Explorer</span>
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => navigate('/songs'))}>
               <Music className="mr-2 h-4 w-4" />
-              <span>Songs</span>
+              <span>Song Library</span>
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => navigate('/settings'))}>
               <Settings className="mr-2 h-4 w-4" />
@@ -99,14 +329,22 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
           <CommandSeparator />
 
           <CommandGroup heading="Actions">
-            <CommandItem onSelect={() => runCommand(() => console.log('New presentation'))}>
+            <CommandItem onSelect={() => runCommand(createPresentation, 'New Presentation', 'new-presentation')}>
               <Plus className="mr-2 h-4 w-4" />
               <span>New Presentation</span>
               <CommandShortcut>⌘N</CommandShortcut>
             </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => console.log('New slide'))}>
-              <Presentation className="mr-2 h-4 w-4" />
-              <span>Add Slide</span>
+            <CommandItem onSelect={() => runCommand(() => {
+              setMode('search');
+            })}>
+              <Search className="mr-2 h-4 w-4" />
+              <span>Global Search</span>
+              <CommandShortcut>⌘P</CommandShortcut>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => setShowShortcutsDialog(true), 'Shortcuts', 'shortcuts')}>
+              <Keyboard className="mr-2 h-4 w-4" />
+              <span>Keyboard Shortcuts</span>
+              <CommandShortcut>⌘/</CommandShortcut>
             </CommandItem>
           </CommandGroup>
 
@@ -115,17 +353,17 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
           <CommandGroup heading="Theme">
             <CommandItem onSelect={() => runCommand(() => setTheme('light'))}>
               <Sun className="mr-2 h-4 w-4" />
-              <span>Light</span>
+              <span>Light Mode</span>
               {theme === 'light' && <span className="ml-auto text-xs">✓</span>}
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => setTheme('dark'))}>
               <Moon className="mr-2 h-4 w-4" />
-              <span>Dark</span>
+              <span>Dark Mode</span>
               {theme === 'dark' && <span className="ml-auto text-xs">✓</span>}
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => setTheme('system'))}>
               <Monitor className="mr-2 h-4 w-4" />
-              <span>System</span>
+              <span>System Default</span>
               {theme === 'system' && <span className="ml-auto text-xs">✓</span>}
             </CommandItem>
           </CommandGroup>

@@ -9,25 +9,27 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Override default blue with Cornflower Blue
+        blue: {
+          50: '#f0f5ff',
+          100: '#e0ebff',
+          200: '#c7d9fc',
+          300: '#a4c2f7',
+          400: '#6495ED', /* Your requested blue */
+          500: '#6495ED',
+          600: '#4a7bd4',
+          700: '#3a62b3',
+          800: '#2d4d8f',
+          900: '#1e3a6e',
+          950: '#142850',
+        },
         // Sanctuary warm neutrals
         sanctuary: {
-          cream: '#FEFCF8',
-          paper: '#FAF8F5',
-          warm: '#F5F3EF',
-          muted: '#E8E5E0',
-          border: '#D4D0C8',
-          text: '#2C2B28',
-          'text-muted': '#6B6A66',
-        },
-        // Liturgical calendar accents
-        liturgical: {
-          advent: '#4B3F72', // Purple
-          christmas: '#D4AF37', // Gold
-          epiphany: '#228B22', // Green
-          lent: '#7B3F61', // Deep purple
-          easter: '#FFFFFF', // White
-          pentecost: '#DC143C', // Red
-          ordinary: '#228B22', // Green
+          cream: '#FAF9F6',
+          paper: '#F2F1ED',
+          warm: '#E3E1DB',
+          charcoal: '#2A2A27',
+          stone: '#1C1B19',
         },
         // Shadcn-compatible CSS variables
         background: 'hsl(var(--background))',
@@ -68,34 +70,11 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Inter', 'system-ui', 'sans-serif'],
         japanese: ['Noto Sans JP', 'Inter', 'system-ui', 'sans-serif'],
-        spanish: ['Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
-      },
-      animation: {
-        'slide-in': 'slideIn 0.2s ease-out',
-        'fade-in': 'fadeIn 0.15s ease-out',
-        'scale-in': 'scaleIn 0.15s ease-out',
-      },
-      keyframes: {
-        slideIn: {
-          '0%': { transform: 'translateX(-10px)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
-        },
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        scaleIn: {
-          '0%': { transform: 'scale(0.95)', opacity: '0' },
-          '100%': { transform: 'scale(1)', opacity: '1' },
-        },
-      },
-      backdropBlur: {
-        xs: '2px',
       },
     },
   },

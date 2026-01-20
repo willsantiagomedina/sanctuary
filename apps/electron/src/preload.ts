@@ -1,30 +1,149 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+// Type definitions for the exposed API
+export interface SanctuaryAPI {
+  // Window management
+  window: {
+    toggleFullscreen: () => Promise<boolean>;
+    isFullscreen: () => Promise<boolean>;
+    minimize: () => Promise<void>;
+    maximize: () => Promise<void>;
+    close: () => Promise<void>;
+    onFullscreenChange: (callback: (isFullscreen: boolean) => void) => () => void;
+  };
+
+  // Output window (for presentations)
+  output: {
+    open: (displayId?: number) => Promise<boolean>;
+    close: () => Promise<boolean>;
+    isOpen: () => Promise<boolean>;
+    sendSlide: (slideData: any) => Promise<void>;
+    onSlideUpdate: (callback: (slideData: any) => void) => () => void;
+    onClosed: (callback: () => void) => () => void;
+  };
+
+  // Display management
+  display: {
+    list: () => Promise<Array<{
+      id: number;
+      label: string;
+      width: number;
+      height: number;
+      isPrimary: boolean;
+    }>>;
+  };
+
+  // MIDI support
+  midi: {
+    listDevices: () => Promise<Array<{ id: string; name: string }>>;
+    connect: (deviceId: string) => Promise<{ success: boolean; error?: string }>;
+    disconnect: () => Promise<{ success: boolean }>;
+    onMessage: (callback: (message: { type: string; data: number[] }) => void) => () => void;
+  };
+
+  // OSC support
+  osc: {
+    send: (address: string, args: any[]) => Promise<{ success: boolean; error?: string }>;
+    startServer: (port: number) => Promise<{ success: boolean; error?: string }>;
+    onMessage: (callback: (message: { address: string; args: any[] }) => void) => () => void;
+  };
+
+  // File system
+  fs: {
+    exportPresentation: (data: any, filename: string) => Promise<{ success: boolean; path?: string; canceled?: boolean }>;
+    importPresentation: () => Promise<{ success: boolean; path?: string; canceled?: boolean }>;
+  };
+
+  // System info
+  system: {
+    info: () => Promise<{
+      platform: string;
+      arch: string;
+      version: string;
+      electron: string;
+      chrome: string;
+      node: string;
+    }>;
+    isElectron: boolean;
+  };
+
+  // Menu events
+  menu: {
+    onNew: (callback: () => void) => () => void;
+    onOpen: (callback: () => void) => () => void;
+    onSave: (callback: () => void) => () => void;
+    onPresentationStart: (callback: () => void) => () => void;
+  };
+}
+
+// Helper to create unsubscribe functions for event listeners
+function createEventHandler(channel: string, callback: (...args: any[]) => void) {
+  const handler = (_event: Electron.IpcRendererEvent, ...args: any[]) => callback(...args);
+  ipcRenderer.on(channel, handler);
+  return () => ipcRenderer.removeListener(channel, handler);
+}
+
 // Expose safe APIs to the renderer process
-contextBridge.exposeInMainWorld('sanctuary', {
+const api: SanctuaryAPI = {
+  // Window management
+  window: {
+    toggleFullscreen: () => ipcRenderer.invoke('window:toggle-fullscreen'),
+    isFullscreen: () => ipcRenderer.invoke('window:is-fullscreen'),
+    minimize: () => ipcRenderer.invoke('window:minimize'),
+    maximize: () => ipcRenderer.invoke('window:maximize'),
+    close: () => ipcRenderer.invoke('window:close'),
+    onFullscreenChange: (callback) => createEventHandler('fullscreen:changed', callback),
+  },
+
+  // Output window
+  output: {
+    open: (displayId) => ipcRenderer.invoke('output:open', displayId),
+    close: () => ipcRenderer.invoke('output:close'),
+    isOpen: () => ipcRenderer.invoke('output:is-open'),
+    sendSlide: (slideData) => ipcRenderer.invoke('output:send-slide', slideData),
+    onSlideUpdate: (callback) => createEventHandler('slide:update', callback),
+    onClosed: (callback) => createEventHandler('output:closed', callback),
+  },
+
+  // Display management
+  display: {
+    list: () => ipcRenderer.invoke('display:list'),
+  },
+
   // MIDI
   midi: {
     listDevices: () => ipcRenderer.invoke('midi:list-devices'),
-    connect: (deviceId: string) => ipcRenderer.invoke('midi:connect', deviceId),
-    onMessage: (callback: (message: any) => void) => {
-      ipcRenderer.on('midi:message', (_event, message) => callback(message));
-    },
+    connect: (deviceId) => ipcRenderer.invoke('midi:connect', deviceId),
+    disconnect: () => ipcRenderer.invoke('midi:disconnect'),
+    onMessage: (callback) => createEventHandler('midi:message', callback),
   },
 
   // OSC
   osc: {
-    send: (address: string, args: any[]) => ipcRenderer.invoke('osc:send', address, args),
-    onMessage: (callback: (message: any) => void) => {
-      ipcRenderer.on('osc:message', (_event, message) => callback(message));
-    },
+    send: (address, args) => ipcRenderer.invoke('osc:send', address, args),
+    startServer: (port) => ipcRenderer.invoke('osc:start-server', port),
+    onMessage: (callback) => createEventHandler('osc:message', callback),
   },
 
-  // Window
-  window: {
-    toggleFullscreen: () => ipcRenderer.invoke('window:toggle-fullscreen'),
-    openOutput: () => ipcRenderer.invoke('window:open-output'),
+  // File system
+  fs: {
+    exportPresentation: (data, filename) => ipcRenderer.invoke('fs:export-presentation', data, filename),
+    importPresentation: () => ipcRenderer.invoke('fs:import-presentation'),
   },
 
-  // Platform info
-  platform: process.platform,
-});
+  // System info
+  system: {
+    info: () => ipcRenderer.invoke('system:info'),
+    isElectron: true,
+  },
+
+  // Menu events
+  menu: {
+    onNew: (callback) => createEventHandler('file:new', callback),
+    onOpen: (callback) => createEventHandler('file:open', callback),
+    onSave: (callback) => createEventHandler('file:save', callback),
+    onPresentationStart: (callback) => createEventHandler('presentation:start', callback),
+  },
+};
+
+contextBridge.exposeInMainWorld('sanctuary', api);

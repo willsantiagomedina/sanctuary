@@ -47,6 +47,15 @@ interface BibleDB extends DBSchema {
       error?: string;
     };
   };
+  searchIndex: {
+    key: [string, string]; // [translationId, token]
+    value: {
+      translationId: string;
+      token: string;
+      verseIds: string[];
+    };
+    indexes: { 'by-translation': string };
+  };
 }
 
 // ============================================================================
@@ -56,13 +65,25 @@ interface BibleDB extends DBSchema {
 class BibleCacheService {
   private db: IDBPDatabase<BibleDB> | null = null;
   private dbName = 'sanctuary-bible-cache';
-  private version = 1;
+  private version = 2;
+
+  private tokenize(text: string): string[] {
+    return Array.from(
+      new Set(
+        text
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, ' ')
+          .split(/\s+/)
+          .filter((token) => token.length >= 3)
+      )
+    );
+  }
 
   async init(): Promise<void> {
     if (this.db) return;
 
     this.db = await openDB<BibleDB>(this.dbName, this.version, {
-      upgrade(db) {
+      upgrade(db, oldVersion) {
         // Translations store
         const translationsStore = db.createObjectStore('translations', { keyPath: 'id' });
         translationsStore.createIndex('by-language', 'language');
@@ -74,6 +95,13 @@ class BibleCacheService {
 
         // Download progress store
         db.createObjectStore('downloadProgress', { keyPath: 'translationId' });
+
+        if (oldVersion < 2) {
+          const searchIndex = db.createObjectStore('searchIndex', {
+            keyPath: ['translationId', 'token'],
+          });
+          searchIndex.createIndex('by-translation', 'translationId');
+        }
       },
     });
   }
@@ -166,11 +194,26 @@ class BibleCacheService {
 
   async saveVerses(verses: BibleDB['verses']['value'][]): Promise<void> {
     const db = await this.ensureDb();
-    const tx = db.transaction('verses', 'readwrite');
+    const tx = db.transaction(['verses', 'searchIndex'], 'readwrite');
     
     for (const verse of verses) {
       verse.id = `${verse.translationId}:${verse.bookAbbrev}:${verse.chapter}:${verse.verse}`;
-      await tx.store.put(verse);
+      await tx.objectStore('verses').put(verse);
+
+      const tokens = this.tokenize(verse.text);
+      for (const token of tokens) {
+        const key: [string, string] = [verse.translationId, token];
+        const existing = await tx.objectStore('searchIndex').get(key);
+        const verseIds = existing?.verseIds || [];
+        if (!verseIds.includes(verse.id)) {
+          verseIds.push(verse.id);
+          await tx.objectStore('searchIndex').put({
+            translationId: verse.translationId,
+            token,
+            verseIds,
+          });
+        }
+      }
     }
     
     await tx.done;
@@ -199,6 +242,18 @@ class BibleCacheService {
     query: string,
     limit = 50
   ): Promise<BibleDB['verses']['value'][]> {
+    const indexed = await this.searchVersesIndexed(translationId, query, limit);
+    if (indexed.length > 0) {
+      return indexed;
+    }
+
+    if (this.tokenize(query).length > 0) {
+      const hasIndexData = await this.hasSearchIndexData(translationId);
+      if (hasIndexData) {
+        return indexed;
+      }
+    }
+
     const db = await this.ensureDb();
     const allVerses = await db.getAllFromIndex('verses', 'by-translation', translationId);
     
@@ -213,6 +268,55 @@ class BibleCacheService {
     }
     
     return results;
+  }
+
+  async searchVersesIndexed(
+    translationId: string,
+    query: string,
+    limit = 50
+  ): Promise<BibleDB['verses']['value'][]> {
+    const tokens = this.tokenize(query);
+    if (tokens.length === 0) return [];
+
+    const db = await this.ensureDb();
+    const searchIndex = db.transaction('searchIndex', 'readonly').objectStore('searchIndex');
+
+    let candidateIds: string[] | null = null;
+    for (const token of tokens) {
+      const record = await searchIndex.get([translationId, token]);
+      if (!record) return [];
+      candidateIds = candidateIds
+        ? candidateIds.filter((id) => record.verseIds.includes(id))
+        : [...record.verseIds];
+      if (candidateIds.length === 0) return [];
+    }
+
+    // Return empty if no candidates found
+    if (!candidateIds || candidateIds.length === 0) return [];
+
+    const matches: BibleDB['verses']['value'][] = [];
+    const queryLower = query.toLowerCase();
+    const limited = candidateIds.slice(0, limit * 5);
+
+    for (const id of limited) {
+      const verse = await db.get('verses', id);
+      if (!verse) continue;
+      if (verse.text.toLowerCase().includes(queryLower)) {
+        matches.push(verse);
+      }
+      if (matches.length >= limit) break;
+    }
+
+    return matches;
+  }
+
+  private async hasSearchIndexData(translationId: string): Promise<boolean> {
+    const db = await this.ensureDb();
+    const cursor = await db.transaction('searchIndex', 'readonly')
+      .objectStore('searchIndex')
+      .index('by-translation')
+      .openCursor(translationId);
+    return Boolean(cursor);
   }
 
   // -------------------------------------------------------------------------

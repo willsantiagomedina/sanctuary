@@ -1,21 +1,25 @@
-import { Outlet } from 'react-router-dom';
-import { useStore } from '../../stores/app';
+import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
+import { useStore } from '../../stores/app';
 import { cn } from '@sanctuary/ui';
 
-export function MainLayout() {
+interface MainLayoutProps {
+  children: ReactNode;
+}
+
+export function MainLayout({ children }: MainLayoutProps) {
   const { sidebarOpen } = useStore();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="min-h-screen bg-background">
       <Sidebar />
-      <main
+      <main 
         className={cn(
-          'flex-1 overflow-auto transition-all duration-300',
-          sidebarOpen ? 'ml-64' : 'ml-16'
+          "transition-all duration-300",
+          sidebarOpen ? "ml-64" : "ml-16"
         )}
       >
-        <Outlet />
+        {children}
       </main>
     </div>
   );

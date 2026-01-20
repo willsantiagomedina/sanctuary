@@ -4,89 +4,71 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Users,
+  Home,
+  Maximize,
+  Minimize,
   Monitor,
-  Maximize2,
-  Settings,
-  Eye,
+  MonitorPlay,
 } from 'lucide-react';
 import { Button, cn } from '@sanctuary/ui';
 
-// Mock data
-const mockSlides = [
-  { id: '1', type: 'title', title: 'Welcome to Worship', subtitle: 'January 19, 2026' },
-  { id: '2', type: 'bible', reference: 'John 3:16', text: 'For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.' },
-  { id: '3', type: 'lyrics', text: "Amazing grace, how sweet the sound\nThat saved a wretch like me", label: 'Amazing Grace - Verse 1' },
-  { id: '4', type: 'lyrics', text: "'Twas grace that taught my heart to fear\nAnd grace my fears relieved", label: 'Amazing Grace - Verse 2' },
-  { id: '5', type: 'title', title: 'Announcements' },
-];
+interface SlideElement {
+  id: string;
+  type: string;
+  content: string;
+  imageUrl?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  style: any;
+}
 
-export function LivePresenter() {
+interface Slide {
+  id: string;
+  background: { type: string; value: string };
+  elements: SlideElement[];
+}
+
+interface Presentation {
+  id: string;
+  name: string;
+  slides: Slide[];
+}
+
+export default function LivePresenter() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [presentation, setPresentation] = useState<Presentation | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [viewerCount] = useState(12);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-  const currentSlide = mockSlides[currentIndex];
-
-  const goToSlide = useCallback((index: number) => {
-    if (index >= 0 && index < mockSlides.length) {
-      setCurrentIndex(index);
-    }
-  }, []);
-
-  const nextSlide = useCallback(() => {
-    goToSlide(currentIndex + 1);
-  }, [currentIndex, goToSlide]);
-
-  const prevSlide = useCallback(() => {
-    goToSlide(currentIndex - 1);
-  }, [currentIndex, goToSlide]);
-
-  // Keyboard navigation
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case 'ArrowRight':
-        case ' ':
-        case 'PageDown':
-          e.preventDefault();
-          nextSlide();
-          break;
-        case 'ArrowLeft':
-        case 'PageUp':
-          e.preventDefault();
-          prevSlide();
-          break;
-        case 'Escape':
-          if (isFullscreen) {
-            document.exitFullscreen?.();
-          } else {
-            navigate('/');
-          }
-          break;
-        case 'f':
-        case 'F':
-          toggleFullscreen();
-          break;
+    if (id) {
+      const stored = localStorage.getItem(`presentation-${id}`);
+      if (stored) {
+        setPresentation(JSON.parse(stored));
       }
-    };
+    }
+  }, [id]);
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [nextSlide, prevSlide, isFullscreen, navigate]);
-
-  // Hide controls after inactivity
   useEffect(() => {
     let timeout: NodeJS.Timeout;
+    let isInitialLoad = true;
+    
     const handleMouseMove = () => {
       setShowControls(true);
       clearTimeout(timeout);
-      timeout = setTimeout(() => setShowControls(false), 3000);
+      // Longer timeout on initial load
+      timeout = setTimeout(() => setShowControls(false), isInitialLoad ? 5000 : 3000);
+      isInitialLoad = false;
     };
 
+    // Show controls initially
+    handleMouseMove();
+    
     window.addEventListener('mousemove', handleMouseMove);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
@@ -94,180 +76,269 @@ export function LivePresenter() {
     };
   }, []);
 
-  const toggleFullscreen = () => {
+  const exitPresentation = useCallback(async () => {
+    // Exit fullscreen first if we're in it
+    if (document.fullscreenElement) {
+      try {
+        await document.exitFullscreen();
+      } catch (e) {
+        // Ignore fullscreen errors
+      }
+    }
+    
+    // Try to close the window (only works if opened by script)
+    try {
+      window.close();
+    } catch (e) {
+      // Ignore close errors
+    }
+    
+    // Always navigate back as fallback (after a tiny delay to let close() work)
+    setTimeout(() => {
+      // If we're still here, navigate back
+      navigate(`/presentations/${id}`);
+    }, 50);
+  }, [navigate, id]);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowRight':
+      case ' ':
+      case 'Enter':
+      case 'PageDown':
+        e.preventDefault();
+        setCurrentIndex(i => Math.min(i + 1, (presentation?.slides?.length || 1) - 1));
+        break;
+      case 'ArrowLeft':
+      case 'Backspace':
+      case 'PageUp':
+        e.preventDefault();
+        setCurrentIndex(i => Math.max(i - 1, 0));
+        break;
+      case 'Home':
+        e.preventDefault();
+        setCurrentIndex(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        setCurrentIndex((presentation?.slides?.length || 1) - 1);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        exitPresentation();
+        break;
+      case 'f':
+      case 'F':
+        e.preventDefault();
+        toggleFullscreen();
+        break;
+    }
+  }, [presentation, exitPresentation]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    const handleFullscreen = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreen);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreen);
+  }, []);
+
+  const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.();
-      setIsFullscreen(true);
+      await document.documentElement.requestFullscreen();
     } else {
-      document.exitFullscreen?.();
-      setIsFullscreen(false);
+      await document.exitFullscreen();
     }
   };
 
+  const goNext = () => {
+    if (presentation && currentIndex < presentation.slides.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const goPrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  if (!presentation) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading presentation...</div>
+      </div>
+    );
+  }
+
+  const currentSlide = presentation.slides[currentIndex];
+  const totalSlides = presentation.slides.length;
+
+  const getBackgroundStyle = (bg: Slide['background']) => {
+    if (bg?.type === 'gradient') return { background: bg.value };
+    if (bg?.type === 'image') return { 
+      backgroundImage: `url(${bg.value})`, 
+      backgroundSize: 'cover', 
+      backgroundPosition: 'center' 
+    };
+    return { backgroundColor: bg?.value || '#1e3a8a' };
+  };
+
   return (
-    <div className="h-screen w-screen bg-black relative overflow-hidden">
-      {/* Main slide display */}
-      <div className="h-full w-full flex items-center justify-center">
-        <SlideDisplay slide={currentSlide} />
+    <div 
+      className="fixed inset-0 bg-black"
+      style={{ cursor: showControls ? 'default' : 'none' }}
+      onClick={(e) => {
+        // Don't navigate if clicking on controls
+        if ((e.target as HTMLElement).closest('button')) return;
+        
+        const rect = (e.target as HTMLElement).getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        if (x > rect.width / 2) {
+          goNext();
+        } else {
+          goPrev();
+        }
+      }}
+    >
+      {/* Slide */}
+      <div 
+        className="w-full h-full flex items-center justify-center transition-all duration-300"
+        style={getBackgroundStyle(currentSlide?.background)}
+      >
+        {(currentSlide?.elements || []).map((element) => (
+          <div
+            key={element.id}
+            className="absolute"
+            style={{
+              left: `${(element.x / 960) * 100}%`,
+              top: `${(element.y / 540) * 100}%`,
+              width: `${(element.width / 960) * 100}%`,
+              height: `${(element.height / 540) * 100}%`,
+              opacity: element.style?.opacity ?? 1,
+            }}
+          >
+            {element.type === 'image' && element.imageUrl ? (
+              <img
+                src={element.imageUrl}
+                alt=""
+                className="w-full h-full"
+                style={{
+                  objectFit: element.style?.objectFit || 'cover',
+                  borderRadius: element.style?.borderRadius || 0,
+                }}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex"
+                style={{
+                  fontFamily: element.style?.fontFamily || 'Inter',
+                  fontSize: `${(element.style?.fontSize || 24) / 540 * 100}vh`,
+                  fontWeight: element.style?.fontWeight || '400',
+                  fontStyle: element.style?.fontStyle || 'normal',
+                  textDecoration: element.style?.textDecoration || 'none',
+                  color: element.style?.color || '#ffffff',
+                  textAlign: element.style?.textAlign || 'center',
+                  alignItems: element.style?.verticalAlign === 'top' ? 'flex-start' : element.style?.verticalAlign === 'bottom' ? 'flex-end' : 'center',
+                  justifyContent: element.style?.textAlign === 'left' ? 'flex-start' : element.style?.textAlign === 'right' ? 'flex-end' : 'center',
+                  padding: element.style?.padding ? `${(element.style.padding / 540) * 100}vh` : 0,
+                  backgroundColor: element.type === 'shape' ? (element.style?.backgroundColor || 'rgba(255,255,255,0.1)') : 'transparent',
+                  borderRadius: element.style?.borderRadius || 0,
+                }}
+              >
+                <span style={{ whiteSpace: 'pre-wrap', width: '100%' }}>{element.content}</span>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Controls overlay */}
-      <div
-        className={cn(
-          'absolute inset-0 transition-opacity duration-300',
-          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}
+      <div 
+        className={`fixed inset-0 pointer-events-none transition-opacity duration-300 ${
+          showControls ? 'opacity-100' : 'opacity-0'
+        }`}
       >
         {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-white/20"
-              onClick={() => navigate('/')}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Exit
-            </Button>
-            
-            <div className="flex items-center gap-4 text-white">
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="h-4 w-4" />
-                <span>{viewerCount} viewers</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Monitor className="h-4 w-4" />
-                <span>Live</span>
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/20"
-                onClick={toggleFullscreen}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/20"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/80 to-transparent flex items-center px-4 pointer-events-auto">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white bg-red-600/90 hover:bg-red-600 gap-2 font-medium"
+            onClick={(e) => { e.stopPropagation(); exitPresentation(); }}
+          >
+            <X className="h-4 w-4" />
+            Exit Presentation
+          </Button>
+          <span className="text-white/70 ml-4 text-sm">{presentation.name}</span>
+          <div className="flex-1" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20"
+            onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+            title={isFullscreen ? 'Exit fullscreen (F)' : 'Fullscreen (F)'}
+          >
+            {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+          </Button>
         </div>
-
-        {/* Navigation arrows */}
-        <button
-          className={cn(
-            'absolute left-4 top-1/2 -translate-y-1/2 p-4 text-white/50 hover:text-white transition-colors',
-            currentIndex === 0 && 'invisible'
-          )}
-          onClick={prevSlide}
-        >
-          <ChevronLeft className="h-12 w-12" />
-        </button>
-        <button
-          className={cn(
-            'absolute right-4 top-1/2 -translate-y-1/2 p-4 text-white/50 hover:text-white transition-colors',
-            currentIndex === mockSlides.length - 1 && 'invisible'
-          )}
-          onClick={nextSlide}
-        >
-          <ChevronRight className="h-12 w-12" />
-        </button>
 
         {/* Bottom bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-          {/* Progress bar */}
-          <div className="flex items-center gap-2 mb-4 max-w-4xl mx-auto">
-            {mockSlides.map((slide, index) => (
-              <button
-                key={slide.id}
-                className={cn(
-                  'h-1 flex-1 rounded-full transition-colors',
-                  index === currentIndex ? 'bg-white' : 'bg-white/30 hover:bg-white/50'
-                )}
-                onClick={() => goToSlide(index)}
-              />
-            ))}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center gap-4 pointer-events-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20 h-12 w-12"
+            onClick={(e) => { e.stopPropagation(); goPrev(); }}
+            disabled={currentIndex === 0}
+          >
+            <ChevronLeft className="h-8 w-8" />
+          </Button>
+          
+          <div className="text-white text-base min-w-[120px] text-center font-medium">
+            {currentIndex + 1} / {totalSlides}
           </div>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20 h-12 w-12"
+            onClick={(e) => { e.stopPropagation(); goNext(); }}
+            disabled={currentIndex === totalSlides - 1}
+          >
+            <ChevronRight className="h-8 w-8" />
+          </Button>
+        </div>
 
-          {/* Slide counter */}
-          <div className="text-center text-white/70 text-sm">
-            {currentIndex + 1} / {mockSlides.length}
-          </div>
+        {/* Slide indicators */}
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-auto">
+          {presentation.slides.map((_, idx) => (
+            <button
+              key={idx}
+              className={cn(
+                "h-2 rounded-full transition-all",
+                idx === currentIndex 
+                  ? 'bg-white w-8' 
+                  : 'bg-white/40 hover:bg-white/60 w-2'
+              )}
+              onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); }}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Preview panel (for presenter view) */}
-      <div
-        className={cn(
-          'absolute bottom-20 right-4 w-64 bg-black/80 rounded-lg overflow-hidden border border-white/20 transition-opacity duration-300',
-          showControls ? 'opacity-100' : 'opacity-0'
-        )}
-      >
-        <div className="p-2 border-b border-white/10 flex items-center gap-2 text-white/70 text-xs">
-          <Eye className="h-3 w-3" />
-          <span>Next slide</span>
-        </div>
-        <div className="aspect-video bg-gradient-to-br from-slate-800 to-slate-900 p-4 flex items-center justify-center">
-          {currentIndex < mockSlides.length - 1 ? (
-            <SlidePreview slide={mockSlides[currentIndex + 1]!} />
-          ) : (
-            <span className="text-white/30 text-xs">End of presentation</span>
-          )}
-        </div>
+      {/* Keyboard hints */}
+      <div className={cn(
+        "fixed bottom-4 right-4 text-white/60 text-xs transition-opacity duration-300 bg-black/40 px-3 py-1.5 rounded-full",
+        showControls ? 'opacity-100' : 'opacity-0'
+      )}>
+        ← → Navigate • F Fullscreen • ESC Exit
       </div>
-    </div>
-  );
-}
-
-function SlideDisplay({ slide }: { slide: typeof mockSlides[0] }) {
-  return (
-    <div className="w-full h-full flex items-center justify-center p-8 md:p-16 text-white bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {slide.type === 'title' && (
-        <div className="text-center animate-fade-in">
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight">{slide.title}</h1>
-          {slide.subtitle && (
-            <p className="text-2xl md:text-3xl text-white/70 mt-6">{slide.subtitle}</p>
-          )}
-        </div>
-      )}
-      {slide.type === 'bible' && (
-        <div className="text-center max-w-4xl animate-fade-in">
-          <p className="text-3xl md:text-5xl leading-relaxed font-medium">
-            "{slide.text}"
-          </p>
-          <p className="text-xl md:text-2xl text-white/70 mt-8">— {slide.reference}</p>
-        </div>
-      )}
-      {slide.type === 'lyrics' && (
-        <div className="text-center animate-fade-in">
-          <p className="text-3xl md:text-5xl leading-relaxed font-medium whitespace-pre-line">
-            {slide.text}
-          </p>
-          {slide.label && (
-            <p className="text-lg text-white/50 mt-8">{slide.label}</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SlidePreview({ slide }: { slide: typeof mockSlides[0] }) {
-  return (
-    <div className="text-center text-white text-xs">
-      {slide.type === 'title' && <span className="font-medium">{slide.title}</span>}
-      {slide.type === 'bible' && <span>{slide.reference}</span>}
-      {slide.type === 'lyrics' && <span className="line-clamp-2">{slide.text}</span>}
     </div>
   );
 }

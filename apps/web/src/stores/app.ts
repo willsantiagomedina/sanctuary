@@ -1,74 +1,82 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { SupportedLanguage, Presentation, Slide } from '@sanctuary/shared';
+
+type Theme = 'light' | 'dark' | 'system';
+type Language = 'en' | 'ja' | 'es';
 
 interface AppState {
-  // Theme
-  theme: 'light' | 'dark' | 'system';
-  setTheme: (theme: 'light' | 'dark' | 'system') => void;
-
-  // Language
-  language: SupportedLanguage;
-  setLanguage: (language: SupportedLanguage) => void;
-
-  // Active organization
-  activeOrganizationId: string | null;
-  setActiveOrganizationId: (id: string | null) => void;
-
-  // Sidebar
+  // UI State
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
-  toggleSidebar: () => void;
-
-  // Command palette
+  
+  // Command Palette
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
-
-  // Active presentation context
-  activePresentation: Presentation | null;
-  setActivePresentation: (presentation: Presentation | null) => void;
-  activeSlideId: string | null;
-  setActiveSlideId: (id: string | null) => void;
+  
+  // Theme
+  theme: Theme;
+  resolvedTheme: 'light' | 'dark';
+  setTheme: (theme: Theme) => void;
+  
+  // Language
+  language: Language;
+  setLanguage: (language: Language) => void;
 }
+
+const getSystemTheme = (): 'light' | 'dark' => {
+  if (typeof window !== 'undefined') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  return 'light';
+};
 
 export const useStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
+      // UI State
+      sidebarOpen: true,
+      setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      
+      // Command Palette
+      commandPaletteOpen: false,
+      setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+      
       // Theme
       theme: 'system',
-      setTheme: (theme) => set({ theme }),
-
+      resolvedTheme: getSystemTheme(),
+      setTheme: (theme) => {
+        const resolved = theme === 'system' ? getSystemTheme() : theme;
+        set({ theme, resolvedTheme: resolved });
+      },
+      
       // Language
       language: 'en',
       setLanguage: (language) => set({ language }),
-
-      // Organization
-      activeOrganizationId: null,
-      setActiveOrganizationId: (id) => set({ activeOrganizationId: id }),
-
-      // Sidebar
-      sidebarOpen: true,
-      setSidebarOpen: (open) => set({ sidebarOpen: open }),
-      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-
-      // Command palette
-      commandPaletteOpen: false,
-      setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
-
-      // Presentation context
-      activePresentation: null,
-      setActivePresentation: (presentation) => set({ activePresentation: presentation }),
-      activeSlideId: null,
-      setActiveSlideId: (id) => set({ activeSlideId: id }),
     }),
     {
-      name: 'sanctuary-storage',
+      name: 'sanctuary-app-store',
       partialize: (state) => ({
+        sidebarOpen: state.sidebarOpen,
         theme: state.theme,
         language: state.language,
-        activeOrganizationId: state.activeOrganizationId,
-        sidebarOpen: state.sidebarOpen,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Resolve theme on rehydration
+          const resolved = state.theme === 'system' ? getSystemTheme() : state.theme;
+          state.resolvedTheme = resolved;
+        }
+      },
     }
   )
 );
+
+// Listen for system theme changes
+if (typeof window !== 'undefined') {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    const state = useStore.getState();
+    if (state.theme === 'system') {
+      useStore.setState({ resolvedTheme: e.matches ? 'dark' : 'light' });
+    }
+  });
+}

@@ -1,51 +1,106 @@
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;500;700&family=Open+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 45 33% 98%;
-    --foreground: 30 4% 16%;
-    --card: 40 27% 97%;
-    --card-foreground: 30 4% 16%;
-    --popover: 40 27% 97%;
-    --popover-foreground: 30 4% 16%;
-    --primary: 262 47% 35%;
+    /* ========================================
+       LIGHT MODE — Notion-inspired warm tones
+       Clean, professional, easy on the eyes
+       ======================================== */
+    
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    
+    /* Warm gold primary - softer than before */
+    --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 35 20% 90%;
-    --secondary-foreground: 30 4% 16%;
-    --muted: 35 15% 91%;
-    --muted-foreground: 30 5% 42%;
-    --accent: 35 20% 90%;
-    --accent-foreground: 30 4% 16%;
-    --destructive: 0 84% 60%;
+    
+    /* Subtle warm gray secondary */
+    --secondary: 40 10% 96%;
+    --secondary-foreground: 240 6% 25%;
+    
+    --muted: 40 10% 96%;
+    --muted-foreground: 240 4% 46%;
+    
+    /* Soft indigo accent */
+    --accent: 225 60% 60%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 35 15% 82%;
-    --input: 35 15% 82%;
-    --ring: 262 47% 35%;
-    --radius: 0.5rem;
+    
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 38 92% 50%;
+    
+    --radius: 0.75rem;
+    
+    --sidebar-bg: 40 10% 98%;
+    
+    /* Success/Warning/Info states */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
   }
-
+  
   .dark {
-    --background: 240 10% 4%;
+    /* ========================================
+       DARK MODE — Elegant, warm dark theme
+       Inspired by Notion's dark mode
+       ======================================== */
+    
+    --background: 220 13% 9%;
     --foreground: 0 0% 95%;
-    --card: 240 10% 6%;
+    
+    --card: 220 13% 12%;
     --card-foreground: 0 0% 95%;
-    --popover: 240 10% 6%;
+    
+    --popover: 220 13% 12%;
     --popover-foreground: 0 0% 95%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 95%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 95%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 262 83% 58%;
+    
+    /* Warmer gold for dark mode */
+    --primary: 38 90% 56%;
+    --primary-foreground: 220 13% 9%;
+    
+    --secondary: 220 13% 16%;
+    --secondary-foreground: 0 0% 88%;
+    
+    --muted: 220 13% 16%;
+    --muted-foreground: 0 0% 65%;
+    
+    /* Brighter accent for dark mode */
+    --accent: 225 50% 65%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 62% 55%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
+    --ring: 38 90% 56%;
+    
+    --sidebar-bg: 220 13% 7%;
+    
+    /* Dark mode states */
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 90% 56%;
+    --warning-foreground: 0 0% 0%;
+    --info: 221 80% 60%;
+    --info-foreground: 0 0% 100%;
   }
 }
 
@@ -54,112 +109,341 @@
     @apply border-border;
   }
   
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/30;
+    @apply bg-background text-foreground;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 }
 
-@layer utilities {
-  /* Glass morphism */
-  .glass {
-    @apply bg-white/10 backdrop-blur-md border border-white/20;
-  }
+/* ========================================
+   Custom Scrollbar - Subtle and elegant
+   ======================================== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
 
-  .glass-dark {
-    @apply bg-black/20 backdrop-blur-md border border-white/10;
-  }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-  /* Typography for slides */
-  .slide-title {
-    @apply text-4xl md:text-6xl font-bold leading-tight tracking-tight;
-  }
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.15);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
 
-  .slide-subtitle {
-    @apply text-xl md:text-2xl font-medium text-muted-foreground;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.25);
+  background-clip: content-box;
+}
 
-  .slide-body {
-    @apply text-lg md:text-xl leading-relaxed;
-  }
+/* ========================================
+   Selection and Focus
+   ======================================== */
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: inherit;
+}
 
-  .verse-text {
-    @apply text-2xl md:text-4xl leading-relaxed font-medium;
-  }
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
 
-  .verse-reference {
-    @apply text-lg text-muted-foreground font-medium;
-  }
+/* ========================================
+   Animations - Smooth and delightful
+   ======================================== */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-  /* Animation utilities */
-  .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
-  }
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
 
-  .animate-slide-down {
-    animation: slideDown 0.3s ease-out;
-  }
+@keyframes slide-in-from-top {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
 
-  @keyframes slideUp {
-    from {
-      transform: translateY(10px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
+@keyframes slide-in-from-bottom {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
 
-  @keyframes slideDown {
-    from {
-      transform: translateY(-10px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
+@keyframes slide-in-from-left {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
 
-  /* Japanese typography adjustments */
-  .font-ja {
-    font-family: 'Noto Sans JP', 'Inter', system-ui, sans-serif;
-  }
+@keyframes slide-in-from-right {
+  from { transform: translateX(10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
 
-  /* Filmstrip styling */
-  .filmstrip-item {
-    @apply relative aspect-video rounded-md overflow-hidden border-2 border-transparent cursor-pointer transition-all duration-150;
-  }
+@keyframes scale-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
 
-  .filmstrip-item:hover {
-    @apply border-primary/50;
-  }
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
 
-  .filmstrip-item.active {
-    @apply border-primary ring-2 ring-primary/20;
-  }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
 
-  /* Editor canvas */
-  .editor-canvas {
-    @apply relative w-full aspect-video bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden shadow-2xl;
-  }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Animation classes */
+.animate-fade-in { animation: fade-in 0.2s ease-out; }
+.animate-fade-out { animation: fade-out 0.2s ease-out; }
+.animate-slide-in-top { animation: slide-in-from-top 0.3s ease-out; }
+.animate-slide-in-bottom { animation: slide-in-from-bottom 0.3s ease-out; }
+.animate-slide-in-left { animation: slide-in-from-left 0.3s ease-out; }
+.animate-slide-in-right { animation: slide-in-from-right 0.3s ease-out; }
+.animate-scale-in { animation: scale-in 0.2s ease-out; }
+.animate-pulse-subtle { animation: pulse-subtle 2s infinite; }
+
+/* ========================================
+   Glassmorphism Utilities
+   ======================================== */
+.glass {
+  @apply bg-white/70 dark:bg-black/30 backdrop-blur-xl border border-white/20 dark:border-white/10;
+}
+
+.glass-subtle {
+  @apply bg-white/50 dark:bg-black/20 backdrop-blur-md border border-white/10 dark:border-white/5;
+}
+
+.glass-card {
+  @apply bg-card/80 backdrop-blur-lg border shadow-lg;
+}
+
+/* ========================================
+   Slide Canvas - Editor grid
+   ======================================== */
+.slide-canvas {
+  background-image: 
+    linear-gradient(to right, hsl(var(--border) / 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.25) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ========================================
+   Resize handles - Editor elements
+   ======================================== */
+.resize-handle {
+  @apply w-2.5 h-2.5 bg-primary border-2 border-white rounded-sm absolute;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: transform 0.1s ease;
+}
+
+.resize-handle:hover {
+  transform: scale(1.2);
+}
+
+.resize-handle.nw { top: -5px; left: -5px; cursor: nwse-resize; }
+.resize-handle.ne { top: -5px; right: -5px; cursor: nesw-resize; }
+.resize-handle.sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.resize-handle.se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+.resize-handle.n { top: -5px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+.resize-handle.s { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+.resize-handle.w { top: 50%; left: -5px; transform: translateY(-50%); cursor: ew-resize; }
+.resize-handle.e { top: 50%; right: -5px; transform: translateY(-50%); cursor: ew-resize; }
+
+/* ========================================
+   Slide thumbnail - Filmstrip
+   ======================================== */
+.slide-thumbnail {
+  @apply relative rounded-xl overflow-hidden border-2 cursor-pointer;
+  border-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.slide-thumbnail:hover {
+  border-color: hsl(var(--primary) / 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px hsl(var(--foreground) / 0.1);
+}
+
+.slide-thumbnail.active {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2);
+}
+
+/* ========================================
+   Toolbar buttons
+   ======================================== */
+.toolbar-btn {
+  @apply p-2 rounded-lg hover:bg-secondary transition-all text-muted-foreground hover:text-foreground;
+}
+
+.toolbar-btn:active {
+  transform: scale(0.95);
+}
+
+.toolbar-btn.active {
+  @apply bg-secondary text-primary;
+}
+
+.toolbar-divider {
+  @apply w-px h-6 bg-border mx-1;
+}
+
+/* ========================================
+   Properties panel - Editor sidebar
+   ======================================== */
+.properties-panel {
+  @apply w-72 bg-card border-l h-full overflow-y-auto;
+}
+
+.properties-section {
+  @apply p-4 border-b;
+}
+
+.properties-section h3 {
+  @apply text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3;
+}
+
+/* ========================================
+   Color swatch - Color picker
+   ======================================== */
+.color-swatch {
+  @apply w-6 h-6 rounded-lg cursor-pointer border border-border;
+  transition: all 0.15s ease;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px hsl(var(--foreground) / 0.15);
+}
+
+.color-swatch.active {
+  @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+}
+
+/* ========================================
+   Spinner - Loading indicator
+   ======================================== */
+.spinner {
+  @apply w-5 h-5 border-2 border-primary border-t-transparent rounded-full;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-lg {
+  @apply w-8 h-8 border-4 border-primary border-t-transparent rounded-full;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ========================================
+   Empty state - No content placeholder
+   ======================================== */
+.empty-state {
+  @apply flex flex-col items-center justify-center p-8 text-center;
+}
+
+.empty-state-icon {
+  @apply w-16 h-16 text-muted-foreground/30 mb-4;
+}
+
+.empty-state-title {
+  @apply text-lg font-semibold mb-2;
+}
+
+.empty-state-description {
+  @apply text-sm text-muted-foreground max-w-sm leading-relaxed;
+}
+
+/* ========================================
+   Card hover effects
+   ======================================== */
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px hsl(var(--foreground) / 0.08);
+}
+
+.card-hover:active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   Interactive elements - Button feedback
+   ======================================== */
+.interactive {
+  transition: all 0.15s ease;
+}
+
+.interactive:hover {
+  transform: translateY(-1px);
+}
+
+.interactive:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ========================================
+   Gradient backgrounds - Hero sections
+   ======================================== */
+.gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+}
+
+.gradient-subtle {
+  background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary)) 100%);
+}
+
+/* ========================================
+   Skeleton shimmer effect
+   ======================================== */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted-foreground) / 0.05) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ========================================
+   Focus ring - Accessibility
+   ======================================== */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+}
+
+/* ========================================
+   Text gradient - Decorative text
+   ======================================== */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+}
+
+/* ========================================
+   Responsive padding utilities
+   ======================================== */
+.container-padding {
+  @apply px-4 sm:px-6 lg:px-8;
 }

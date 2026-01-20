@@ -5,16 +5,31 @@
   "description": "Cloud-native worship presentation platform",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"pnpm --filter @sanctuary/web dev\" \"pnpm --filter @sanctuary/convex dev\"",
+    "dev": "pnpm --filter @sanctuary/web dev",
+    "dev:convex": "pnpm --filter @sanctuary/convex dev",
+    "dev:electron": "concurrently -k \"pnpm --filter @sanctuary/web dev\" \"sleep 5 && pnpm --filter @sanctuary/electron dev\"",
     "build": "pnpm --filter @sanctuary/web build",
+    "build:electron": "pnpm --filter @sanctuary/web build && pnpm --filter @sanctuary/electron build",
+    "package": "pnpm build:electron && pnpm --filter @sanctuary/electron package",
+    "package:mac": "pnpm build:electron && pnpm --filter @sanctuary/electron package:mac",
+    "package:win": "pnpm build:electron && pnpm --filter @sanctuary/electron package:win",
     "lint": "pnpm --filter @sanctuary/web lint",
     "typecheck": "pnpm -r typecheck"
   },
-  "keywords": ["worship", "presentation", "church", "slides", "bible"],
+  "keywords": [
+    "worship",
+    "presentation",
+    "church",
+    "slides",
+    "bible"
+  ],
   "author": "Sanctuary Team",
   "license": "MIT",
   "engines": {
     "node": ">=20",
     "pnpm": ">=8"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

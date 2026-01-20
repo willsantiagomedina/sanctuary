@@ -1,35 +1,295 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu, screen, dialog, nativeTheme, nativeImage } from 'electron';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// ============================================================================
+// App Configuration
+// ============================================================================
+
+// Set app name
+app.name = 'Sanctuary';
+
+// Get resource path (different in dev vs production)
+function getResourcePath(...segments: string[]) {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, ...segments);
+  }
+  return path.join(__dirname, '../../build', ...segments);
+}
+
+// Get the appropriate icon based on system theme
+function getAppIcon() {
+  const isDark = nativeTheme.shouldUseDarkColors;
+  // Use light icon on dark backgrounds, dark icon on light backgrounds
+  const iconName = isDark ? 'icon-light.png' : 'icon-dark.png';
+  const iconPath = getResourcePath(iconName);
+  return nativeImage.createFromPath(iconPath);
+}
+
+// Update dock icon when theme changes (macOS)
+function updateDockIcon() {
+  if (process.platform === 'darwin') {
+    const icon = getAppIcon();
+    if (!icon.isEmpty()) {
+      app.dock.setIcon(icon);
+    }
+  }
+}
+
+// Listen for theme changes
+nativeTheme.on('updated', () => {
+  updateDockIcon();
+  // Notify renderer of theme change
+  mainWindow?.webContents.send('theme:changed', nativeTheme.shouldUseDarkColors);
+});
+
+// ============================================================================
+// Window Management
+// ============================================================================
 
 let mainWindow: BrowserWindow | null = null;
+let outputWindow: BrowserWindow | null = null;
+
+const isDev = !app.isPackaged;
 
 function createWindow() {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+
+  // Get window icon
+  const icon = getAppIcon();
+
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: Math.min(1600, screenWidth * 0.9),
+    height: Math.min(1000, screenHeight * 0.9),
     minWidth: 1024,
     minHeight: 768,
-    titleBarStyle: 'hiddenInset',
+    title: 'Sanctuary',
+    icon: icon.isEmpty() ? undefined : icon,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 20, y: 20 },
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#1C1B19' : '#FAF9F6',
+    show: false,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
     },
   });
 
-  // In development, load from Vite dev server
-  if (process.env.NODE_ENV === 'development') {
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
+    updateDockIcon();
+  });
+
+  // In dev mode, load from the web dev server
+  if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    // In production, load the built files
+    // In production, load the built renderer
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http')) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  mainWindow.on('enter-full-screen', () => {
+    mainWindow?.webContents.send('fullscreen:changed', true);
+  });
+
+  mainWindow.on('leave-full-screen', () => {
+    mainWindow?.webContents.send('fullscreen:changed', false);
+  });
+}
+
+// ============================================================================
+// Output Window (for presentations on secondary display)
+// ============================================================================
+
+function createOutputWindow(displayId?: number) {
+  const displays = screen.getAllDisplays();
+  const targetDisplay = displayId 
+    ? displays.find(d => d.id === displayId) 
+    : displays.find(d => d.id !== screen.getPrimaryDisplay().id) || displays[0];
+
+  if (!targetDisplay) {
+    dialog.showErrorBox('No Display Found', 'Could not find a display for output window.');
+    return;
+  }
+
+  outputWindow = new BrowserWindow({
+    x: targetDisplay.bounds.x,
+    y: targetDisplay.bounds.y,
+    width: targetDisplay.bounds.width,
+    height: targetDisplay.bounds.height,
+    fullscreen: true,
+    frame: false,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    backgroundColor: '#000000',
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+
+  if (isDev) {
+    outputWindow.loadURL('http://localhost:3000/present/output');
+  } else {
+    outputWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
+      hash: '/present/output',
+    });
+  }
+
+  outputWindow.on('closed', () => {
+    outputWindow = null;
+    mainWindow?.webContents.send('output:closed');
+  });
+
+  mainWindow?.webContents.send('output:opened');
+}
+
+// ============================================================================
+// System Tray (disabled until icon ready)
+// ============================================================================
+
+// function createTray() { ... }
+
+// ============================================================================
+// Application Menu
+// ============================================================================
+
+function createMenu() {
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'New Presentation',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => mainWindow?.webContents.send('file:new'),
+        },
+        {
+          label: 'Open...',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => mainWindow?.webContents.send('file:open'),
+        },
+        { type: 'separator' },
+        {
+          label: 'Save',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => mainWindow?.webContents.send('file:save'),
+        },
+        { type: 'separator' },
+        { role: 'close' },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    },
+    {
+      label: 'Presentation',
+      submenu: [
+        {
+          label: 'Start Presentation',
+          accelerator: 'CmdOrCtrl+Enter',
+          click: () => mainWindow?.webContents.send('presentation:start'),
+        },
+        {
+          label: 'Stop Presentation',
+          accelerator: 'Escape',
+          click: () => outputWindow?.close(),
+        },
+        { type: 'separator' },
+        {
+          label: 'Open Output Window',
+          accelerator: 'CmdOrCtrl+Shift+O',
+          click: () => createOutputWindow(),
+        },
+      ],
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        { role: 'front' },
+      ],
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Documentation',
+          click: () => shell.openExternal('https://sanctuary.dev/docs'),
+        },
+        {
+          label: 'Report Issue',
+          click: () => shell.openExternal('https://github.com/sanctuary/sanctuary/issues'),
+        },
+      ],
+    },
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 }
 
 // ============================================================================
@@ -38,6 +298,8 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+  createMenu();
+  // createTray(); // Uncomment when icon is ready
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -52,51 +314,168 @@ app.on('window-all-closed', () => {
   }
 });
 
+// Security: Prevent navigation to untrusted URLs
+app.on('web-contents-created', (_event, contents) => {
+  contents.on('will-navigate', (event, url) => {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.origin !== 'http://localhost:3000' && !url.startsWith('file://')) {
+      event.preventDefault();
+    }
+  });
+});
+
 // ============================================================================
-// IPC Handlers for Native Features
+// IPC Handlers - Window Management
 // ============================================================================
 
-// MIDI Support (for foot pedals, etc.)
+ipcMain.handle('window:toggle-fullscreen', async () => {
+  if (mainWindow) {
+    mainWindow.setFullScreen(!mainWindow.isFullScreen());
+    return mainWindow.isFullScreen();
+  }
+  return false;
+});
+
+ipcMain.handle('window:is-fullscreen', async () => {
+  return mainWindow?.isFullScreen() ?? false;
+});
+
+ipcMain.handle('window:minimize', async () => {
+  mainWindow?.minimize();
+});
+
+ipcMain.handle('window:maximize', async () => {
+  if (mainWindow?.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow?.maximize();
+  }
+});
+
+ipcMain.handle('window:close', async () => {
+  mainWindow?.close();
+});
+
+// ============================================================================
+// IPC Handlers - Output Window
+// ============================================================================
+
+ipcMain.handle('output:open', async (_event, displayId?: number) => {
+  if (outputWindow) {
+    outputWindow.focus();
+    return true;
+  }
+  createOutputWindow(displayId);
+  return true;
+});
+
+ipcMain.handle('output:close', async () => {
+  outputWindow?.close();
+  return true;
+});
+
+ipcMain.handle('output:is-open', async () => {
+  return outputWindow !== null;
+});
+
+ipcMain.handle('output:send-slide', async (_event, slideData: any) => {
+  outputWindow?.webContents.send('slide:update', slideData);
+});
+
+ipcMain.handle('display:list', async () => {
+  return screen.getAllDisplays().map(d => ({
+    id: d.id,
+    label: d.label,
+    width: d.bounds.width,
+    height: d.bounds.height,
+    isPrimary: d.id === screen.getPrimaryDisplay().id,
+  }));
+});
+
+// ============================================================================
+// IPC Handlers - MIDI Support
+// ============================================================================
+
 ipcMain.handle('midi:list-devices', async () => {
-  // TODO: Implement MIDI device listing
+  // TODO: Implement with node-midi or similar
   return [];
 });
 
 ipcMain.handle('midi:connect', async (_event, deviceId: string) => {
   // TODO: Implement MIDI connection
-  console.log('Connecting to MIDI device:', deviceId);
+  console.log('MIDI: Connecting to device:', deviceId);
+  return { success: false, error: 'Not implemented' };
 });
 
-// OSC Support (for lighting control)
+ipcMain.handle('midi:disconnect', async () => {
+  // TODO: Implement MIDI disconnection
+  return { success: true };
+});
+
+// ============================================================================
+// IPC Handlers - OSC Support
+// ============================================================================
+
 ipcMain.handle('osc:send', async (_event, address: string, args: any[]) => {
-  // TODO: Implement OSC message sending
-  console.log('Sending OSC:', address, args);
+  // TODO: Implement with node-osc or similar
+  console.log('OSC: Sending to', address, args);
+  return { success: false, error: 'Not implemented' };
 });
 
-// Window Management
-ipcMain.handle('window:toggle-fullscreen', async () => {
-  if (mainWindow) {
-    mainWindow.setFullScreen(!mainWindow.isFullScreen());
-  }
+ipcMain.handle('osc:start-server', async (_event, port: number) => {
+  // TODO: Start OSC server
+  console.log('OSC: Starting server on port', port);
+  return { success: false, error: 'Not implemented' };
 });
 
-ipcMain.handle('window:open-output', async () => {
-  // Open a second window for output display
-  const outputWindow = new BrowserWindow({
-    width: 1920,
-    height: 1080,
-    fullscreen: true,
-    frame: false,
-    webPreferences: {
-      contextIsolation: true,
-    },
+// ============================================================================
+// IPC Handlers - File System
+// ============================================================================
+
+ipcMain.handle('fs:export-presentation', async (_event, data: any, filename: string) => {
+  const result = await dialog.showSaveDialog(mainWindow!, {
+    defaultPath: filename,
+    filters: [
+      { name: 'Sanctuary Presentation', extensions: ['sanctuary'] },
+      { name: 'PDF', extensions: ['pdf'] },
+    ],
   });
 
-  if (process.env.NODE_ENV === 'development') {
-    outputWindow.loadURL('http://localhost:3000/live/output');
-  } else {
-    outputWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
-      hash: '/live/output',
-    });
+  if (result.canceled || !result.filePath) {
+    return { success: false, canceled: true };
   }
+
+  // TODO: Actually write the file
+  return { success: true, path: result.filePath };
+});
+
+ipcMain.handle('fs:import-presentation', async () => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    properties: ['openFile'],
+    filters: [
+      { name: 'Sanctuary Presentation', extensions: ['sanctuary'] },
+    ],
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false, canceled: true };
+  }
+
+  // TODO: Actually read the file
+  return { success: true, path: result.filePaths[0] };
+});
+
+// ============================================================================
+// IPC Handlers - System Info
+// ============================================================================
+
+ipcMain.handle('system:info', async () => {
+  return {
+    platform: process.platform,
+    arch: process.arch,
+    version: app.getVersion(),
+    electron: process.versions.electron,
+    chrome: process.versions.chrome,
+    node: process.versions.node,
+  };
 });

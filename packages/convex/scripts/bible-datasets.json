@@ -1,0 +1,58 @@
+[
+  {
+    "code": "kjv",
+    "name": "King James Version",
+    "abbreviation": "KJV",
+    "language": "en",
+    "copyright": "Public Domain",
+    "sourceUrl": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/sources/en/KJV/KJV.json"
+  },
+  {
+    "code": "asv",
+    "name": "American Standard Version",
+    "abbreviation": "ASV",
+    "language": "en",
+    "copyright": "Public Domain",
+    "sourceUrl": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/sources/en/ASV/ASV.json"
+  },
+  {
+    "code": "bbe",
+    "name": "Bible in Basic English",
+    "abbreviation": "BBE",
+    "language": "en",
+    "copyright": "Public Domain",
+    "sourceUrl": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/sources/en/BBE/BBE.json"
+  },
+  {
+    "code": "rvr1909",
+    "name": "Reina-Valera 1909",
+    "abbreviation": "RVR1909",
+    "language": "es",
+    "copyright": "Public Domain",
+    "sourceUrl": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/sources/es/SpaRV/SpaRV.json"
+  },
+  {
+    "code": "rvr1865",
+    "name": "Reina-Valera 1865",
+    "abbreviation": "RVR1865",
+    "language": "es",
+    "copyright": "Public Domain",
+    "sourceUrl": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/sources/es/SpaRV1865/SpaRV1865.json"
+  },
+  {
+    "code": "japkougo",
+    "name": "口語訳聖書 (Kougo-yaku)",
+    "abbreviation": "口語訳",
+    "language": "ja",
+    "copyright": "Public Domain",
+    "sourceUrl": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/sources/ja/JapKougo/JapKougo.json"
+  },
+  {
+    "code": "japbungo",
+    "name": "明治元訳/大正改訳",
+    "abbreviation": "文語訳",
+    "language": "ja",
+    "copyright": "Public Domain",
+    "sourceUrl": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/sources/ja/JapBungo/JapBungo.json"
+  }
+]
