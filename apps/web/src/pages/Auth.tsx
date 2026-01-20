@@ -93,7 +93,7 @@ export default function Auth() {
                 routing="path" 
                 path="/auth/signup"
                 signInUrl="/auth"
-                afterSignUpUrl="/"
+                fallbackRedirectUrl="/"
                 appearance={{
                   baseTheme: undefined,
                   variables: {
@@ -121,7 +121,7 @@ export default function Auth() {
                 routing="path" 
                 path="/auth"
                 signUpUrl="/auth/signup"
-                afterSignInUrl="/"
+                fallbackRedirectUrl="/"
                 appearance={{
                   baseTheme: undefined,
                   variables: {

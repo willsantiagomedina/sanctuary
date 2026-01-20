@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell, Menu, screen, dialog, nativeTheme, nativeImage } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import pkg from 'electron-updater';
+const { autoUpdater } = pkg;
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -165,13 +166,28 @@ function createWindow() {
     updateDockIcon();
   });
 
+  // Add error handling for page load failures
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    console.error('Failed to load:', validatedURL, errorCode, errorDescription);
+    // Show error in window
+    mainWindow?.webContents.loadURL(`data:text/html,<html><body style="font-family:system-ui;padding:40px;"><h1>Failed to load</h1><p>URL: ${validatedURL}</p><p>Error: ${errorDescription} (${errorCode})</p><button onclick="location.reload()">Retry</button></body></html>`);
+  });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('Page loaded successfully');
+  });
+
   // In dev mode, load from the web dev server
   if (isDev) {
-    mainWindow.loadURL('http://localhost:3000');
+    mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     // In production, load from Cloudflare Pages
-    mainWindow.loadURL('https://sanctuary.app');
+    mainWindow.loadURL('https://sanctuaryslides.app').catch(err => {
+      console.error('Failed to load URL:', err);
+    });
+    // Open DevTools for debugging (remove in final release)
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -426,12 +442,19 @@ app.on('web-contents-created', (_event, contents) => {
   contents.on('will-navigate', (event, url) => {
     const parsedUrl = new URL(url);
     const allowedOrigins = [
+      'http://localhost:5173',
       'http://localhost:3000',
-      'https://sanctuary.app',
-      'https://staging.sanctuary.app',
+      'https://sanctuaryslides.app',
+      'https://robust-chicken-30.clerk.accounts.dev',
+      'https://accounts.google.com',
+      'https://clerk.accounts.dev',
     ];
     
-    if (!allowedOrigins.includes(parsedUrl.origin) && !url.startsWith('file://')) {
+    // Allow navigation to allowed origins or Clerk-related URLs
+    const isAllowed = allowedOrigins.some(origin => parsedUrl.origin === origin || parsedUrl.origin.endsWith('.clerk.accounts.dev'));
+    
+    if (!isAllowed && !url.startsWith('file://')) {
+      console.log('Blocked navigation to:', url);
       event.preventDefault();
     }
   });

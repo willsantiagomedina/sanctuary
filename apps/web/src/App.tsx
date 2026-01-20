@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
-import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { MainLayout } from './components/layout/MainLayout';
 import { CommandPaletteProvider } from './components/layout/CommandPalette';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -50,7 +49,7 @@ function GlobalDialogs() {
 
 // Protected route wrapper - uses Clerk when configured
 function ProtectedRoute() {
-  const { isLoading } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
 
   if (isLoading) {
     return (
@@ -61,17 +60,14 @@ function ProtectedRoute() {
   }
 
   if (isClerkConfigured) {
+    // Use Navigate instead of RedirectToSignIn for better Electron compatibility
+    if (!isAuthenticated) {
+      return <Navigate to="/auth" replace />;
+    }
     return (
-      <>
-        <SignedIn>
-          <MainLayout>
-            <Outlet />
-          </MainLayout>
-        </SignedIn>
-        <SignedOut>
-          <RedirectToSignIn />
-        </SignedOut>
-      </>
+      <MainLayout>
+        <Outlet />
+      </MainLayout>
     );
   }
 
