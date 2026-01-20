@@ -191,9 +191,28 @@ function createWindow() {
   }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    // Allow Clerk OAuth to open in a new window (not external browser)
-    if (url.includes('clerk.accounts.dev') || url.includes('clerk.com')) {
-      return { 
+    const oauthPopupHosts = new Set([
+      'accounts.google.com',
+      'github.com',
+      'appleid.apple.com',
+    ]);
+
+    let hostname = '';
+    try {
+      hostname = new URL(url).hostname;
+    } catch {
+      hostname = '';
+    }
+
+    const isClerkHost = hostname === 'clerk.accounts.dev'
+      || hostname.endsWith('.clerk.accounts.dev')
+      || hostname === 'clerk.com'
+      || hostname.endsWith('.clerk.com');
+    const isOAuthProvider = hostname !== '' && oauthPopupHosts.has(hostname);
+
+    // Allow Clerk/OAuth popups to stay in-app so Clerk can complete the flow.
+    if (isClerkHost || isOAuthProvider) {
+      return {
         action: 'allow',
         overrideBrowserWindowOptions: {
           width: 500,
@@ -203,29 +222,17 @@ function createWindow() {
           webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-          }
-        }
+          },
+        },
       };
     }
-    
-    // Open external OAuth providers in system browser
-    const externalOAuthOrigins = [
-      'https://accounts.google.com',
-      'https://github.com/login',
-      'https://appleid.apple.com',
-    ];
-    
-    if (externalOAuthOrigins.some(origin => url.startsWith(origin))) {
-      shell.openExternal(url);
-      return { action: 'deny' };
-    }
-    
+
     // Open other http links externally
     if (url.startsWith('http') && !url.includes('sanctuaryslides.app') && !url.includes('localhost')) {
       shell.openExternal(url);
       return { action: 'deny' };
     }
-    
+
     return { action: 'allow' };
   });
 
@@ -466,12 +473,21 @@ app.on('web-contents-created', (_event, contents) => {
       'https://sanctuaryslides.app',
       'https://robust-chicken-30.clerk.accounts.dev',
       'https://accounts.google.com',
+      'https://github.com',
+      'https://appleid.apple.com',
       'https://clerk.accounts.dev',
+      'https://clerk.com',
+      'https://accounts.clerk.com',
     ];
-    
+
+    const isClerkOrigin = parsedUrl.hostname === 'clerk.accounts.dev'
+      || parsedUrl.hostname.endsWith('.clerk.accounts.dev')
+      || parsedUrl.hostname === 'clerk.com'
+      || parsedUrl.hostname.endsWith('.clerk.com');
+
     // Allow navigation to allowed origins or Clerk-related URLs
-    const isAllowed = allowedOrigins.some(origin => parsedUrl.origin === origin || parsedUrl.origin.endsWith('.clerk.accounts.dev'));
-    
+    const isAllowed = allowedOrigins.includes(parsedUrl.origin) || isClerkOrigin;
+
     if (!isAllowed && !url.startsWith('file://')) {
       console.log('Blocked navigation to:', url);
       event.preventDefault();
