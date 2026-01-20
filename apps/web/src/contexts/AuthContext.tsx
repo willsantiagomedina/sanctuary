@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { useUser, useClerk, SignedIn, SignedOut } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 import { isClerkConfigured } from '../lib/auth/client';
@@ -30,8 +30,21 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 // Clerk-based auth provider
 function ClerkAuthProvider({ children }: { children: ReactNode }) {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
+  const [hasTimedOut, setHasTimedOut] = useState(false);
+
+  // Timeout fallback - if Clerk doesn't load in 10 seconds, stop waiting
+  useEffect(() => {
+    if (isLoaded) return;
+    
+    const timeout = setTimeout(() => {
+      console.warn('Clerk auth loading timed out after 10s');
+      setHasTimedOut(true);
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, [isLoaded]);
 
   const logout = () => {
     signOut();
@@ -45,13 +58,16 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
     image: user.imageUrl || undefined,
   } : null;
 
+  // Consider loaded if Clerk reports loaded OR if we've timed out
+  const effectivelyLoaded = isLoaded || hasTimedOut;
+
   return (
     <AuthContext.Provider
       value={{
         user: contextUser,
-        isAuthenticated: !!user,
-        isLoading: !isLoaded,
-        currentOrganization: null, // TODO: Implement with Clerk organizations
+        isAuthenticated: !!isSignedIn,
+        isLoading: !effectivelyLoaded,
+        currentOrganization: null,
         userOrganizations: [],
         logout,
       }}
