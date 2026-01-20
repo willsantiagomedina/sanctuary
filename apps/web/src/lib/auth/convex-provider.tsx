@@ -1,8 +1,9 @@
-import { ReactNode, useMemo } from 'react';
-import { ConvexProviderWithAuth as ConvexAuthProvider, ConvexProvider } from 'convex/react';
+import { ReactNode, useMemo, useCallback } from 'react';
+import { ClerkProvider, useAuth } from '@clerk/clerk-react';
+import { ConvexProviderWithClerk } from 'convex/react-clerk';
+import { ConvexProvider } from 'convex/react';
 import { ConvexReactClient } from 'convex/react';
-import { useBetterAuth } from './use-betterauth';
-import { isBetterAuthConfigured } from './client';
+import { isClerkConfigured, clerkPublishableKey } from './client';
 
 interface ConvexProviderWithAuthProps {
   client: ConvexReactClient;
@@ -10,34 +11,20 @@ interface ConvexProviderWithAuthProps {
 }
 
 /**
- * Wraps ConvexProvider with BetterAuth token integration.
- * Falls back to regular ConvexProvider if BetterAuth is not configured.
+ * Wraps ConvexProvider with Clerk authentication.
+ * Falls back to regular ConvexProvider if Clerk is not configured.
  */
 export function ConvexProviderWithAuth({ client, children }: ConvexProviderWithAuthProps) {
-  if (!isBetterAuthConfigured) {
+  if (!isClerkConfigured) {
     // No auth configured - use regular ConvexProvider
     return <ConvexProvider client={client}>{children}</ConvexProvider>;
   }
 
   return (
-    <ConvexAuthProvider client={client} useAuth={useConvexAuth}>
-      {children}
-    </ConvexAuthProvider>
+    <ClerkProvider publishableKey={clerkPublishableKey}>
+      <ConvexProviderWithClerk client={client} useAuth={useAuth}>
+        {children}
+      </ConvexProviderWithClerk>
+    </ClerkProvider>
   );
-}
-
-/**
- * Auth adapter for Convex that uses BetterAuth tokens
- */
-function useConvexAuth() {
-  const { isAuthenticated, isLoading, getToken } = useBetterAuth();
-
-  return useMemo(() => ({
-    isLoading,
-    isAuthenticated,
-    fetchAccessToken: async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
-      if (!isAuthenticated) return null;
-      return getToken({ forceRefresh: forceRefreshToken });
-    },
-  }), [isAuthenticated, isLoading, getToken]);
 }

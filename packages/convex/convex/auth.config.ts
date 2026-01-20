@@ -1,18 +1,18 @@
 /**
- * Convex Auth Configuration
+ * Convex Auth Configuration for Clerk
  * 
- * This configures Convex to validate BetterAuth JWTs.
- * Convex will fetch the JWKS from BetterAuth to verify tokens.
+ * Convex validates Clerk JWTs automatically when you use
+ * ConvexProviderWithClerk. Set CLERK_JWT_ISSUER_DOMAIN in
+ * Convex environment variables.
  * 
- * Note: Set AUTH_BETTERAUTH_URL in Convex environment variables
- * when authentication is enabled.
+ * @see https://docs.convex.dev/auth/clerk
  */
 export default {
   providers: [
-    // Uncomment when BetterAuth is configured:
-    // {
-    //   domain: process.env.AUTH_BETTERAUTH_URL || "https://auth.betterauth.com/your-project",
-    //   applicationID: "sanctuary",
-    // },
+    {
+      // Clerk issuer domain - set in Convex dashboard
+      domain: process.env.CLERK_JWT_ISSUER_DOMAIN,
+      applicationID: "convex",
+    },
   ],
 };

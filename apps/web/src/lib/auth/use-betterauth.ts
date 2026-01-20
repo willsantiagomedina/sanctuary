@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState, useEffect } from 'react';
-import { authClient, useSession, isBetterAuthConfigured } from './client';
+import { useCallback, useMemo } from 'react';
+import { useUser, useAuth } from '@clerk/clerk-react';
+import { isClerkConfigured } from './client';
 
 export interface AuthState {
   user: {
@@ -13,48 +14,47 @@ export interface AuthState {
 }
 
 export interface AuthActions {
-  signIn: typeof authClient.signIn;
-  signOut: typeof authClient.signOut;
-  signUp: typeof authClient.signUp;
   getToken: (options?: { forceRefresh?: boolean }) => Promise<string | null>;
 }
 
-export type UseBetterAuthReturn = AuthState & AuthActions;
+export type UseAuthReturn = AuthState & AuthActions;
 
 /**
- * Main auth hook for BetterAuth integration
- * Works identically in browser and Electron
- * Returns null user when BetterAuth is not configured
+ * Main auth hook - uses Clerk when configured, otherwise returns null user
  */
-export function useBetterAuth(): UseBetterAuthReturn {
-  const session = useSession();
-  const [isReady, setIsReady] = useState(!isBetterAuthConfigured);
+export function useAppAuth(): UseAuthReturn {
+  if (!isClerkConfigured) {
+    return {
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      getToken: async () => null,
+    };
+  }
 
-  useEffect(() => {
-    // Wait for dynamic import to complete
-    if (isBetterAuthConfigured) {
-      const timer = setTimeout(() => setIsReady(true), 100);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  return useClerkAuth();
+}
 
-  const getToken = useCallback(async (_options?: { forceRefresh?: boolean }) => {
-    if (!session.data?.session) return null;
-    return session.data.session.token ?? null;
-  }, [session.data]);
+function useClerkAuth(): UseAuthReturn {
+  const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
+
+  const fetchToken = useCallback(async (_options?: { forceRefresh?: boolean }) => {
+    return getToken({ template: 'convex' });
+  }, [getToken]);
 
   return useMemo(() => ({
-    user: session.data?.user ? {
-      id: session.data.user.id,
-      email: session.data.user.email,
-      name: session.data.user.name ?? undefined,
-      image: session.data.user.image ?? undefined,
+    user: user ? {
+      id: user.id,
+      email: user.primaryEmailAddress?.emailAddress || '',
+      name: user.fullName ?? undefined,
+      image: user.imageUrl ?? undefined,
     } : null,
-    isAuthenticated: !!session.data?.user,
-    isLoading: !isReady || session.isPending,
-    signIn: authClient.signIn,
-    signOut: authClient.signOut,
-    signUp: authClient.signUp,
-    getToken,
-  }), [session.data, session.isPending, isReady, getToken]);
+    isAuthenticated: !!user,
+    isLoading: !isLoaded,
+    getToken: fetchToken,
+  }), [user, isLoaded, fetchToken]);
 }
+
+// Re-export for backwards compatibility
+export const useBetterAuth = useAppAuth;
