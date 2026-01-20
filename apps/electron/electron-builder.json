@@ -31,6 +31,10 @@
       {
         "target": "dmg",
         "arch": ["x64", "arm64"]
+      },
+      {
+        "target": "zip",
+        "arch": ["x64", "arm64"]
       }
     ],
     "icon": "build/icon.icns",
@@ -89,8 +93,8 @@
     "icon": "build/icons"
   },
   "publish": {
-    "provider": "github",
-    "owner": "sanctuary",
-    "repo": "sanctuary"
+    "provider": "generic",
+    "url": "https://assets.sanctuary.app/releases",
+    "channel": "latest"
   }
 }

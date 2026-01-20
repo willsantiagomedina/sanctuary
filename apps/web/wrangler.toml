@@ -1,0 +1,22 @@
+# Cloudflare Pages Configuration for Sanctuary Web App
+name = "sanctuary"
+compatibility_date = "2024-01-01"
+
+# Pages-specific settings are managed in the dashboard
+# This file documents the expected configuration
+
+# Environment variables (set in Cloudflare Dashboard):
+# - VITE_CONVEX_URL
+# - VITE_BETTERAUTH_URL  
+# - VITE_APP_URL
+# - VITE_ASSETS_URL
+
+# Build configuration:
+# Build command: pnpm --filter @sanctuary/web build
+# Build output directory: apps/web/dist
+# Root directory: /
+
+# Preview branches:
+# - Production: main branch -> sanctuary.app
+# - Staging: staging branch -> staging.sanctuary.app
+# - Preview: PR branches -> {branch}.sanctuary.pages.dev

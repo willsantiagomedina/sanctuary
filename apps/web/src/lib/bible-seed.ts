@@ -1,6 +1,7 @@
 import type { BibleTranslation, SupportedLanguage } from '@sanctuary/shared';
 import { bibleCache } from './bible-cache';
-import { bibleData, BIBLE_BOOKS } from '../data/bible';
+import { BIBLE_BOOKS } from '../data/bible';
+import { KJV_COMPLETE } from '../data/kjv-complete';
 
 type SeedBookData = Record<number, Record<number, string>>;
 type SeedTranslationData = Record<string, SeedBookData>;
@@ -35,6 +36,34 @@ const countSeedVerses = (data: SeedTranslationData): number => {
   return total;
 };
 
+// Map from our standard book names to KJV source names
+const BOOK_NAME_MAP: Record<string, string> = {
+  '1 Samuel': 'I Samuel',
+  '2 Samuel': 'II Samuel',
+  '1 Kings': 'I Kings',
+  '2 Kings': 'II Kings',
+  '1 Chronicles': 'I Chronicles',
+  '2 Chronicles': 'II Chronicles',
+  'Psalm': 'Psalms',
+  '1 Corinthians': 'I Corinthians',
+  '2 Corinthians': 'II Corinthians',
+  '1 Thessalonians': 'I Thessalonians',
+  '2 Thessalonians': 'II Thessalonians',
+  '1 Timothy': 'I Timothy',
+  '2 Timothy': 'II Timothy',
+  '1 Peter': 'I Peter',
+  '2 Peter': 'II Peter',
+  '1 John': 'I John',
+  '2 John': 'II John',
+  '3 John': 'III John',
+  'Revelation': 'Revelation of John',
+};
+
+// Reverse map for looking up by source name
+const REVERSE_BOOK_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(BOOK_NAME_MAP).map(([k, v]) => [v, k])
+);
+
 const SEED_TRANSLATIONS: SeedTranslation[] = [
   {
     id: 'kjv',
@@ -42,9 +71,9 @@ const SEED_TRANSLATIONS: SeedTranslation[] = [
     abbreviation: 'KJV',
     language: 'en',
     copyright: 'Public Domain',
-    data: bibleData.KJV || {},
-    bookCount: Object.keys(bibleData.KJV || {}).length,
-    verseCount: countSeedVerses(bibleData.KJV || {}),
+    data: KJV_COMPLETE,
+    bookCount: Object.keys(KJV_COMPLETE).length,
+    verseCount: countSeedVerses(KJV_COMPLETE),
   },
 ];
 
@@ -90,8 +119,18 @@ export function getSeedTranslationMeta(
 export function getSeedBooks(translationId: string): string[] {
   const seed = getSeedTranslation(translationId);
   if (!seed) return [];
-  const available = new Set(Object.keys(seed.data));
-  return BIBLE_BOOKS.filter((book) => available.has(book));
+  const sourceBooks = new Set(Object.keys(seed.data));
+  
+  // Return books that exist either directly or via mapping
+  return BIBLE_BOOKS.filter((book) => {
+    const sourceName = BOOK_NAME_MAP[book] || book;
+    return sourceBooks.has(sourceName) || sourceBooks.has(book);
+  });
+}
+
+// Helper to get the source book name for a given standard name
+function getSourceBookName(bookAbbrev: string): string {
+  return BOOK_NAME_MAP[bookAbbrev] || bookAbbrev;
 }
 
 export function getSeedBookEntries(
@@ -108,7 +147,8 @@ export function getSeedBookEntries(
 export function getSeedChapters(translationId: string, bookAbbrev: string): number[] {
   const seed = getSeedTranslation(translationId);
   if (!seed) return [];
-  const chapters = seed.data?.[bookAbbrev];
+  const sourceName = getSourceBookName(bookAbbrev);
+  const chapters = seed.data?.[sourceName] || seed.data?.[bookAbbrev];
   if (!chapters) return [];
   return Object.keys(chapters).map(Number).sort((a, b) => a - b);
 }
@@ -120,7 +160,8 @@ export function getSeedVerseNumbers(
 ): number[] {
   const seed = getSeedTranslation(translationId);
   if (!seed) return [];
-  const verses = seed.data?.[bookAbbrev]?.[chapter];
+  const sourceName = getSourceBookName(bookAbbrev);
+  const verses = seed.data?.[sourceName]?.[chapter] || seed.data?.[bookAbbrev]?.[chapter];
   if (!verses) return [];
   return Object.keys(verses).map(Number).sort((a, b) => a - b);
 }
@@ -133,7 +174,8 @@ export function getSeedVerseText(
 ): string | null {
   const seed = getSeedTranslation(translationId);
   if (!seed) return null;
-  return seed.data?.[bookAbbrev]?.[chapter]?.[verse] || null;
+  const sourceName = getSourceBookName(bookAbbrev);
+  return seed.data?.[sourceName]?.[chapter]?.[verse] || seed.data?.[bookAbbrev]?.[chapter]?.[verse] || null;
 }
 
 export function getSeedChapterVerses(
@@ -143,7 +185,8 @@ export function getSeedChapterVerses(
 ): SeedVerse[] {
   const seed = getSeedTranslation(translationId);
   if (!seed) return [];
-  const verses = seed.data?.[bookAbbrev]?.[chapter];
+  const sourceName = getSourceBookName(bookAbbrev);
+  const verses = seed.data?.[sourceName]?.[chapter] || seed.data?.[bookAbbrev]?.[chapter];
   if (!verses) return [];
   return Object.entries(verses).map(([verse, text]) => ({
     id: '',
