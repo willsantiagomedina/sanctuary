@@ -1,7 +1,8 @@
 import { ReactNode, useMemo } from 'react';
-import { ConvexProviderWithAuth as ConvexAuthProvider } from 'convex/react';
+import { ConvexProviderWithAuth as ConvexAuthProvider, ConvexProvider } from 'convex/react';
 import { ConvexReactClient } from 'convex/react';
 import { useBetterAuth } from './use-betterauth';
+import { isBetterAuthConfigured } from './client';
 
 interface ConvexProviderWithAuthProps {
   client: ConvexReactClient;
@@ -10,9 +11,14 @@ interface ConvexProviderWithAuthProps {
 
 /**
  * Wraps ConvexProvider with BetterAuth token integration.
- * Convex will validate tokens against BetterAuth's JWKS endpoint.
+ * Falls back to regular ConvexProvider if BetterAuth is not configured.
  */
 export function ConvexProviderWithAuth({ client, children }: ConvexProviderWithAuthProps) {
+  if (!isBetterAuthConfigured) {
+    // No auth configured - use regular ConvexProvider
+    return <ConvexProvider client={client}>{children}</ConvexProvider>;
+  }
+
   return (
     <ConvexAuthProvider client={client} useAuth={useConvexAuth}>
       {children}

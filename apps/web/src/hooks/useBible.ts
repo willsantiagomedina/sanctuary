@@ -26,13 +26,13 @@ export function useBibleTranslations(language?: SupportedLanguage) {
       try {
         const cached = await bibleCache.listTranslations(language);
         const serverVersions = await convex.query(api.bible.getVersions, {});
-        setServerAvailableIds(serverVersions.map((version) => version.code));
+        setServerAvailableIds(serverVersions.map((version: { code: string }) => version.code));
         setServerError(null);
         const availableMap = new Map(AVAILABLE_TRANSLATIONS.map((t) => [t.id, t]));
 
         const serverTranslations: BibleTranslation[] = serverVersions
-          .filter((version) => (language ? version.language === language : true))
-          .map((version) => ({
+          .filter((version: { language: string }) => (language ? version.language === language : true))
+          .map((version: { code: string; name: string; language: string; copyright?: string; bookCount: number; verseCount: number }) => ({
             id: version.code,
             name: version.name,
             abbreviation: availableMap.get(version.code)?.abbreviation || version.code.toUpperCase(),
@@ -109,7 +109,7 @@ export function useBibleBooks(translationId: string) {
         });
 
         setBooks(
-          serverBooks.map((book) => ({
+          serverBooks.map((book: { name: string; chapters: number }) => ({
             name: book.name,
             chapterCount: book.chapters,
           }))
@@ -194,7 +194,7 @@ export function useBibleVerses(
         });
 
         if (serverChapter?.verses?.length) {
-          const normalized = serverChapter.verses.map((verse) => ({
+          const normalized = serverChapter.verses.map((verse: { verse: number; text: string }) => ({
             id: '',
             translationId,
             bookAbbrev,
@@ -256,7 +256,7 @@ export function useBibleSearch(translationId: string, query: string) {
       });
 
       if (serverResults.length > 0) {
-        const normalized = serverResults.map((verse) => ({
+        const normalized = serverResults.map((verse: { book: string; chapter: number; verse: number; text: string }) => ({
           id: '',
           translationId,
           bookAbbrev: verse.book,
@@ -371,7 +371,7 @@ export function useBibleDownload(translationId: string) {
     }
 
     const serverVersions = await convex.query(api.bible.getVersions, {});
-    const version = serverVersions.find((item) => item.code === translationId);
+    const version = serverVersions.find((item: { code: string }) => item.code === translationId);
     if (!version) {
       setProgress((p) => ({
         ...p,
@@ -434,7 +434,7 @@ export function useBibleDownload(translationId: string) {
 
         if (!chapterData?.verses?.length) continue;
 
-        const normalized = chapterData.verses.map((verse) => ({
+        const normalized = chapterData.verses.map((verse: { verse: number; text: string }) => ({
           id: '',
           translationId,
           bookAbbrev: book.name,
