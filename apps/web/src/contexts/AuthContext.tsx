@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useConvex, useMutation, useQuery } from 'convex/react';
+import { createContext, useContext, ReactNode } from 'react';
+import { useUser, useClerk, SignedIn, SignedOut } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
+import { isClerkConfigured } from '../lib/auth/client';
 
 // Types
 interface User {
@@ -22,180 +23,74 @@ interface AuthContextType {
   isLoading: boolean;
   currentOrganization: Organization | null;
   userOrganizations: Organization[];
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, name?: string) => Promise<boolean>;
   logout: () => void;
-  createOrganization: (name: string) => Promise<boolean>;
-  switchOrganization: (orgId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Simple storage helper
-const AUTH_KEY = 'sanctuary-auth';
-const ORG_KEY = 'sanctuary-org';
-const ORGS_KEY = 'sanctuary-orgs';
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
-  const [userOrganizations, setUserOrganizations] = useState<Organization[]>([]);
-
-  // Load auth state from localStorage on mount
-  useEffect(() => {
-    const storedAuth = localStorage.getItem(AUTH_KEY);
-    const storedOrg = localStorage.getItem(ORG_KEY);
-    const storedOrgs = localStorage.getItem(ORGS_KEY);
-    
-    if (storedAuth) {
-      try {
-        const parsed = JSON.parse(storedAuth);
-        setUser(parsed);
-      } catch (e) {
-        localStorage.removeItem(AUTH_KEY);
-      }
-    }
-    
-    if (storedOrg) {
-      try {
-        setCurrentOrganization(JSON.parse(storedOrg));
-      } catch (e) {
-        localStorage.removeItem(ORG_KEY);
-      }
-    }
-    
-    if (storedOrgs) {
-      try {
-        setUserOrganizations(JSON.parse(storedOrgs));
-      } catch (e) {
-        localStorage.removeItem(ORGS_KEY);
-      }
-    }
-    
-    setIsLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      // For demo, we'll use localStorage-based auth
-      // In production, this would call BetterAuth
-      const userData: User = {
-        _id: `user-${Date.now()}`,
-        email,
-        name: email.split('@')[0],
-      };
-      
-      setUser(userData);
-      localStorage.setItem(AUTH_KEY, JSON.stringify(userData));
-      
-      // Load user's organizations
-      const storedOrgs = localStorage.getItem(`${ORGS_KEY}-${email}`);
-      if (storedOrgs) {
-        const orgs = JSON.parse(storedOrgs);
-        setUserOrganizations(orgs);
-        if (orgs.length > 0) {
-          setCurrentOrganization(orgs[0]);
-          localStorage.setItem(ORG_KEY, JSON.stringify(orgs[0]));
-        }
-        localStorage.setItem(ORGS_KEY, storedOrgs);
-      }
-      
-      toast.success('Welcome back!');
-      return true;
-    } catch (error) {
-      toast.error('Login failed');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signup = async (email: string, password: string, name?: string): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      const userData: User = {
-        _id: `user-${Date.now()}`,
-        email,
-        name: name || email.split('@')[0],
-      };
-      
-      setUser(userData);
-      localStorage.setItem(AUTH_KEY, JSON.stringify(userData));
-      toast.success('Account created!');
-      return true;
-    } catch (error) {
-      toast.error('Signup failed');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+// Clerk-based auth provider
+function ClerkAuthProvider({ children }: { children: ReactNode }) {
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
 
   const logout = () => {
-    setUser(null);
-    setCurrentOrganization(null);
-    setUserOrganizations([]);
-    localStorage.removeItem(AUTH_KEY);
-    localStorage.removeItem(ORG_KEY);
-    localStorage.removeItem(ORGS_KEY);
+    signOut();
     toast.success('Signed out');
   };
 
-  const createOrganization = async (name: string): Promise<boolean> => {
-    try {
-      const newOrg: Organization = {
-        _id: `org-${Date.now()}`,
-        name,
-        role: 'owner',
-      };
-      
-      const updatedOrgs = [...userOrganizations, newOrg];
-      setUserOrganizations(updatedOrgs);
-      setCurrentOrganization(newOrg);
-      
-      localStorage.setItem(ORG_KEY, JSON.stringify(newOrg));
-      localStorage.setItem(ORGS_KEY, JSON.stringify(updatedOrgs));
-      if (user?.email) {
-        localStorage.setItem(`${ORGS_KEY}-${user.email}`, JSON.stringify(updatedOrgs));
-      }
-      
-      toast.success('Organization created!');
-      return true;
-    } catch (error) {
-      toast.error('Failed to create organization');
-      return false;
-    }
-  };
-
-  const switchOrganization = (orgId: string) => {
-    const org = userOrganizations.find((o) => o._id === orgId);
-    if (org) {
-      setCurrentOrganization(org);
-      localStorage.setItem(ORG_KEY, JSON.stringify(org));
-      toast.success(`Switched to ${org.name}`);
-    }
-  };
+  const contextUser: User | null = user ? {
+    _id: user.id,
+    email: user.primaryEmailAddress?.emailAddress || '',
+    name: user.fullName || user.firstName || undefined,
+    image: user.imageUrl || undefined,
+  } : null;
 
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: contextUser,
         isAuthenticated: !!user,
-        isLoading,
-        currentOrganization,
-        userOrganizations,
-        login,
-        signup,
+        isLoading: !isLoaded,
+        currentOrganization: null, // TODO: Implement with Clerk organizations
+        userOrganizations: [],
         logout,
-        createOrganization,
-        switchOrganization,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
+}
+
+// Fallback provider when Clerk is not configured (demo mode)
+function DemoAuthProvider({ children }: { children: ReactNode }) {
+  // Demo mode - always authenticated with a fake user
+  const demoUser: User = {
+    _id: 'demo-user',
+    email: 'demo@sanctuary.app',
+    name: 'Demo User',
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user: demoUser,
+        isAuthenticated: true,
+        isLoading: false,
+        currentOrganization: null,
+        userOrganizations: [],
+        logout: () => toast.success('Demo mode - refresh to reset'),
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  if (isClerkConfigured) {
+    return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
+  }
+  return <DemoAuthProvider>{children}</DemoAuthProvider>;
 }
 
 export function useAuth() {
@@ -205,3 +100,6 @@ export function useAuth() {
   }
   return context;
 }
+
+// Re-export Clerk components for convenience
+export { SignedIn, SignedOut };

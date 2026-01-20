@@ -1,11 +1,13 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
+import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { MainLayout } from './components/layout/MainLayout';
 import { CommandPaletteProvider } from './components/layout/CommandPalette';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useStore } from './stores/app';
 import { GlobalSearchDialog, KeyboardShortcutsDialog, StylePresetsDialog, SlideVariantsDialog } from './components/editor';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { isClerkConfigured } from './lib/auth/client';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -46,9 +48,9 @@ function GlobalDialogs() {
   );
 }
 
-// Protected route wrapper
+// Protected route wrapper - uses Clerk when configured
 function ProtectedRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -58,10 +60,22 @@ function ProtectedRoute() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
+  if (isClerkConfigured) {
+    return (
+      <>
+        <SignedIn>
+          <MainLayout>
+            <Outlet />
+          </MainLayout>
+        </SignedIn>
+        <SignedOut>
+          <RedirectToSignIn />
+        </SignedOut>
+      </>
+    );
   }
 
+  // Demo mode - always allow access
   return (
     <MainLayout>
       <Outlet />
@@ -69,7 +83,7 @@ function ProtectedRoute() {
   );
 }
 
-// Public route wrapper (redirects if already logged in)
+// Public route wrapper
 function PublicRoute() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -81,7 +95,8 @@ function PublicRoute() {
     );
   }
 
-  if (isAuthenticated) {
+  // In demo mode without Clerk, redirect to app
+  if (!isClerkConfigured) {
     return <Navigate to="/" replace />;
   }
 
@@ -99,7 +114,7 @@ function AppRoutes() {
         {/* Public routes */}
         <Route element={<PublicRoute />}>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/signup" element={<Auth />} />
+          <Route path="/auth/*" element={<Auth />} />
         </Route>
 
         {/* Protected routes */}
