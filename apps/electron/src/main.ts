@@ -390,6 +390,7 @@ function createMenu() {
 app.whenReady().then(() => {
   createWindow();
   createMenu();
+  setupAutoUpdater();
   // createTray(); // Uncomment when icon is ready
 
   app.on('activate', () => {
@@ -405,11 +406,32 @@ app.on('window-all-closed', () => {
   }
 });
 
+// Handle OAuth callback deep links
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  
+  // Parse the callback URL and send to renderer
+  if (url.startsWith(`${PROTOCOL}://`)) {
+    const callbackUrl = new URL(url);
+    mainWindow?.webContents.send('auth:callback', {
+      pathname: callbackUrl.pathname,
+      search: callbackUrl.search,
+      params: Object.fromEntries(callbackUrl.searchParams),
+    });
+  }
+});
+
 // Security: Prevent navigation to untrusted URLs
 app.on('web-contents-created', (_event, contents) => {
   contents.on('will-navigate', (event, url) => {
     const parsedUrl = new URL(url);
-    if (parsedUrl.origin !== 'http://localhost:3000' && !url.startsWith('file://')) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://sanctuary.app',
+      'https://staging.sanctuary.app',
+    ];
+    
+    if (!allowedOrigins.includes(parsedUrl.origin) && !url.startsWith('file://')) {
       event.preventDefault();
     }
   });
@@ -569,4 +591,37 @@ ipcMain.handle('system:info', async () => {
     chrome: process.versions.chrome,
     node: process.versions.node,
   };
+});
+
+// ============================================================================
+// IPC Handlers - Auto Updater
+// ============================================================================
+
+ipcMain.handle('updater:check', async () => {
+  if (!app.isPackaged) {
+    return { available: false, message: 'Updates disabled in development' };
+  }
+  
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { 
+      available: !!result?.updateInfo,
+      version: result?.updateInfo?.version,
+    };
+  } catch (error) {
+    return { available: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('updater:download', async () => {
+  try {
+    await autoUpdater.downloadUpdate();
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('updater:install', async () => {
+  autoUpdater.quitAndInstall(false, true);
 });

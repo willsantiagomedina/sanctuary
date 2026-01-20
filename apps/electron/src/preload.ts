@@ -74,6 +74,24 @@ export interface SanctuaryAPI {
     onSave: (callback: () => void) => () => void;
     onPresentationStart: (callback: () => void) => () => void;
   };
+
+  // Auto updater
+  updater: {
+    check: () => Promise<{ available: boolean; version?: string; error?: string; message?: string }>;
+    download: () => Promise<{ success: boolean; error?: string }>;
+    install: () => Promise<void>;
+    onChecking: (callback: () => void) => () => void;
+    onAvailable: (callback: (info: { version: string; releaseDate?: string; releaseNotes?: string }) => void) => () => void;
+    onNotAvailable: (callback: () => void) => () => void;
+    onProgress: (callback: (progress: { percent: number; transferred: number; total: number; bytesPerSecond: number }) => void) => () => void;
+    onDownloaded: (callback: (info: { version: string }) => void) => () => void;
+    onError: (callback: (error: string) => void) => () => void;
+  };
+
+  // Auth callbacks (for OAuth deep links)
+  auth: {
+    onCallback: (callback: (data: { pathname: string; search: string; params: Record<string, string> }) => void) => () => void;
+  };
 }
 
 // Helper to create unsubscribe functions for event listeners
