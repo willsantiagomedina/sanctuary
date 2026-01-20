@@ -1,0 +1,23 @@
+name = "sanctuary-bible-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Routes
+routes = [
+  { pattern = "api.sanctuary.app/bible/*", zone_name = "sanctuary.app" }
+]
+
+# KV namespace for caching Bible data
+[[kv_namespaces]]
+binding = "BIBLE_CACHE"
+id = "your-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
+
+# Environment variables (set via dashboard or wrangler secret)
+# BIBLE_API_KEY - API key for external Bible API
+
+[vars]
+ENVIRONMENT = "production"
+CACHE_TTL = "86400"
+RATE_LIMIT_REQUESTS = "100"
+RATE_LIMIT_WINDOW = "60"
