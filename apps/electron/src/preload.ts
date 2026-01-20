@@ -162,6 +162,24 @@ const api: SanctuaryAPI = {
     onSave: (callback) => createEventHandler('file:save', callback),
     onPresentationStart: (callback) => createEventHandler('presentation:start', callback),
   },
+
+  // Auto updater
+  updater: {
+    check: () => ipcRenderer.invoke('updater:check'),
+    download: () => ipcRenderer.invoke('updater:download'),
+    install: () => ipcRenderer.invoke('updater:install'),
+    onChecking: (callback) => createEventHandler('updater:checking', callback),
+    onAvailable: (callback) => createEventHandler('updater:available', callback),
+    onNotAvailable: (callback) => createEventHandler('updater:not-available', callback),
+    onProgress: (callback) => createEventHandler('updater:progress', callback),
+    onDownloaded: (callback) => createEventHandler('updater:downloaded', callback),
+    onError: (callback) => createEventHandler('updater:error', callback),
+  },
+
+  // Auth callbacks
+  auth: {
+    onCallback: (callback) => createEventHandler('auth:callback', callback),
+  },
 };
 
 contextBridge.exposeInMainWorld('sanctuary', api);
