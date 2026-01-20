@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@sanctuary/shared": ["../../packages/shared/src"],
+      "@sanctuary/shared/*": ["../../packages/shared/src/*"],
+      "@sanctuary/ui": ["../../packages/ui/src"],
+      "@sanctuary/ui/*": ["../../packages/ui/src/*"],
+      "@sanctuary/convex": ["../../packages/convex/src"],
+      "@sanctuary/convex/*": ["../../packages/convex/src/*"]
+    }
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/ui" },
+    { "path": "../../packages/convex" }
+  ]
+}

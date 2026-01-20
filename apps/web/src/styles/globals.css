@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 45 33% 98%;
+    --foreground: 30 4% 16%;
+    --card: 40 27% 97%;
+    --card-foreground: 30 4% 16%;
+    --popover: 40 27% 97%;
+    --popover-foreground: 30 4% 16%;
+    --primary: 262 47% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 35 20% 90%;
+    --secondary-foreground: 30 4% 16%;
+    --muted: 35 15% 91%;
+    --muted-foreground: 30 5% 42%;
+    --accent: 35 20% 90%;
+    --accent-foreground: 30 4% 16%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 35 15% 82%;
+    --input: 35 15% 82%;
+    --ring: 262 47% 35%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 95%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 95%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 262 83% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
+
+@layer utilities {
+  /* Glass morphism */
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .glass-dark {
+    @apply bg-black/20 backdrop-blur-md border border-white/10;
+  }
+
+  /* Typography for slides */
+  .slide-title {
+    @apply text-4xl md:text-6xl font-bold leading-tight tracking-tight;
+  }
+
+  .slide-subtitle {
+    @apply text-xl md:text-2xl font-medium text-muted-foreground;
+  }
+
+  .slide-body {
+    @apply text-lg md:text-xl leading-relaxed;
+  }
+
+  .verse-text {
+    @apply text-2xl md:text-4xl leading-relaxed font-medium;
+  }
+
+  .verse-reference {
+    @apply text-lg text-muted-foreground font-medium;
+  }
+
+  /* Animation utilities */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Japanese typography adjustments */
+  .font-ja {
+    font-family: 'Noto Sans JP', 'Inter', system-ui, sans-serif;
+  }
+
+  /* Filmstrip styling */
+  .filmstrip-item {
+    @apply relative aspect-video rounded-md overflow-hidden border-2 border-transparent cursor-pointer transition-all duration-150;
+  }
+
+  .filmstrip-item:hover {
+    @apply border-primary/50;
+  }
+
+  .filmstrip-item.active {
+    @apply border-primary ring-2 ring-primary/20;
+  }
+
+  /* Editor canvas */
+  .editor-canvas {
+    @apply relative w-full aspect-video bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden shadow-2xl;
+  }
+}
