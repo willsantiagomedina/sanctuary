@@ -191,22 +191,41 @@ function createWindow() {
   }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    // Allow OAuth popups to specific providers
-    const allowedOAuthOrigins = [
+    // Allow Clerk OAuth to open in a new window (not external browser)
+    if (url.includes('clerk.accounts.dev') || url.includes('clerk.com')) {
+      return { 
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 500,
+          height: 700,
+          parent: mainWindow!,
+          modal: false,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+          }
+        }
+      };
+    }
+    
+    // Open external OAuth providers in system browser
+    const externalOAuthOrigins = [
       'https://accounts.google.com',
       'https://github.com/login',
       'https://appleid.apple.com',
     ];
     
-    if (allowedOAuthOrigins.some(origin => url.startsWith(origin))) {
+    if (externalOAuthOrigins.some(origin => url.startsWith(origin))) {
       shell.openExternal(url);
       return { action: 'deny' };
     }
     
-    if (url.startsWith('http')) {
+    // Open other http links externally
+    if (url.startsWith('http') && !url.includes('sanctuaryslides.app') && !url.includes('localhost')) {
       shell.openExternal(url);
       return { action: 'deny' };
     }
+    
     return { action: 'allow' };
   });
 
