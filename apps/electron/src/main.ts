@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell, Menu, screen, dialog, nativeTheme, nativeImage } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -10,6 +11,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Set app name
 app.name = 'Sanctuary';
+
+// Custom protocol for OAuth callbacks
+const PROTOCOL = 'sanctuary';
+
+// Register protocol for OAuth deep linking
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient(PROTOCOL);
+}
 
 // Get resource path (different in dev vs production)
 function getResourcePath(...segments: string[]) {
@@ -44,6 +59,70 @@ nativeTheme.on('updated', () => {
   // Notify renderer of theme change
   mainWindow?.webContents.send('theme:changed', nativeTheme.shouldUseDarkColors);
 });
+
+// ============================================================================
+// Auto Updater Configuration
+// ============================================================================
+
+function setupAutoUpdater() {
+  // Configure auto-updater to use R2
+  autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: 'https://assets.sanctuary.app/releases',
+  });
+
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => {
+    mainWindow?.webContents.send('updater:checking');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    mainWindow?.webContents.send('updater:available', {
+      version: info.version,
+      releaseDate: info.releaseDate,
+      releaseNotes: info.releaseNotes,
+    });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    mainWindow?.webContents.send('updater:not-available');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    mainWindow?.webContents.send('updater:progress', {
+      percent: progress.percent,
+      transferred: progress.transferred,
+      total: progress.total,
+      bytesPerSecond: progress.bytesPerSecond,
+    });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    mainWindow?.webContents.send('updater:downloaded', {
+      version: info.version,
+    });
+  });
+
+  autoUpdater.on('error', (error) => {
+    mainWindow?.webContents.send('updater:error', error.message);
+  });
+
+  // Check for updates on startup (after window is ready)
+  if (app.isPackaged) {
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch(() => {
+        // Silently fail - user can manually check
+      });
+    }, 3000);
+
+    // Check periodically (every hour)
+    setInterval(() => {
+      autoUpdater.checkForUpdates().catch(() => {});
+    }, 60 * 60 * 1000);
+  }
+}
 
 // ============================================================================
 // Window Management
@@ -91,11 +170,23 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    // In production, load the built renderer
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    // In production, load from Cloudflare Pages
+    mainWindow.loadURL('https://sanctuary.app');
   }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Allow OAuth popups to specific providers
+    const allowedOAuthOrigins = [
+      'https://accounts.google.com',
+      'https://github.com/login',
+      'https://appleid.apple.com',
+    ];
+    
+    if (allowedOAuthOrigins.some(origin => url.startsWith(origin))) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    
     if (url.startsWith('http')) {
       shell.openExternal(url);
       return { action: 'deny' };
