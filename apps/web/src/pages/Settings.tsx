@@ -34,9 +34,18 @@ import {
 import { useStore } from '../stores/app';
 import { useAuth } from '../contexts/AuthContext';
 import { useBibleDownload, useBibleTranslations } from '../hooks/useBible';
+import { getSeedTranslationMeta } from '../lib/bible-seed';
 import type { BibleTranslation } from '@sanctuary/shared';
 
-function BibleVersionRow({ translation }: { translation: BibleTranslation }) {
+function BibleVersionRow({
+  translation,
+  canDownload,
+  unavailableReason,
+}: {
+  translation: BibleTranslation;
+  canDownload: boolean;
+  unavailableReason?: string;
+}) {
   const { progress, startDownload, cancelDownload } = useBibleDownload(translation.id);
   const isDownloading = progress.status === 'downloading';
   const isDownloaded = translation.isDownloaded || progress.status === 'complete';
@@ -50,7 +59,9 @@ function BibleVersionRow({ translation }: { translation: BibleTranslation }) {
       cancelDownload();
       return;
     }
-    startDownload();
+    if (canDownload) {
+      startDownload();
+    }
   };
 
   return (
@@ -83,12 +94,24 @@ function BibleVersionRow({ translation }: { translation: BibleTranslation }) {
           <Button
             variant={isDownloaded ? "outline" : "default"}
             size="sm"
+            disabled={!canDownload && !isDownloaded && !isDownloading}
             onClick={handleAction}
           >
-            {isDownloading ? 'Cancel' : isDownloaded ? 'Available' : hasError ? 'Retry' : 'Download'}
+            {isDownloading
+              ? 'Cancel'
+              : isDownloaded
+                ? 'Available'
+                : !canDownload
+                  ? 'Unavailable'
+                  : hasError
+                    ? 'Retry'
+                    : 'Download'}
           </Button>
         </div>
       </div>
+      {unavailableReason && !canDownload && !isDownloaded && (
+        <div className="text-xs text-muted-foreground">{unavailableReason}</div>
+      )}
       {(isDownloading || hasError) && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -107,7 +130,7 @@ function BibleVersionRow({ translation }: { translation: BibleTranslation }) {
 export default function Settings() {
   const { theme, setTheme, resolvedTheme } = useStore();
   const { user } = useAuth();
-  const { translations, loading: translationsLoading } = useBibleTranslations();
+  const { translations, loading: translationsLoading, serverAvailableIds, serverError } = useBibleTranslations();
   const [saved, setSaved] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [autoSave, setAutoSave] = useState(true);
@@ -316,9 +339,23 @@ export default function Settings() {
               ) : translations.length === 0 ? (
                 <div className="text-sm text-muted-foreground">No translations available.</div>
               ) : (
-                translations.map((translation) => (
-                  <BibleVersionRow key={translation.id} translation={translation} />
-                ))
+                translations.map((translation) => {
+                  const seedAvailable = Boolean(getSeedTranslationMeta(translation.id));
+                  const serverAvailable = serverAvailableIds.includes(translation.id);
+                  const canDownload = seedAvailable || serverAvailable;
+                  const unavailableReason = serverError
+                    ? 'Server offline. Connect to download.'
+                    : 'Not available on the server.';
+
+                  return (
+                    <BibleVersionRow
+                      key={translation.id}
+                      translation={translation}
+                      canDownload={canDownload}
+                      unavailableReason={canDownload ? undefined : unavailableReason}
+                    />
+                  );
+                })
               )}
             </div>
           </CardContent>
