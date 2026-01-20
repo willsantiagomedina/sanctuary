@@ -95,14 +95,24 @@ export default function Auth() {
                 signInUrl="/auth"
                 afterSignUpUrl="/"
                 appearance={{
+                  baseTheme: undefined,
+                  variables: {
+                    colorBackground: '#ffffff',
+                    colorText: '#000000',
+                    colorPrimary: '#6366f1',
+                  },
                   elements: {
                     rootBox: 'w-full',
-                    card: 'shadow-xl border-0 bg-card/50 backdrop-blur-sm',
-                    headerTitle: 'text-2xl font-semibold',
-                    headerSubtitle: 'text-muted-foreground',
-                    socialButtonsBlockButton: 'border border-input hover:bg-accent',
+                    card: 'shadow-xl border bg-white',
+                    headerTitle: 'text-2xl font-semibold text-gray-900',
+                    headerSubtitle: 'text-gray-600',
+                    socialButtonsBlockButton: 'border border-gray-200 hover:bg-gray-50 text-gray-700',
                     formButtonPrimary: 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20',
                     footerActionLink: 'text-primary hover:text-primary/80',
+                    formFieldInput: 'bg-white border-gray-300 text-gray-900',
+                    formFieldLabel: 'text-gray-700',
+                    dividerLine: 'bg-gray-200',
+                    dividerText: 'text-gray-500',
                   },
                 }}
               />
@@ -113,14 +123,24 @@ export default function Auth() {
                 signUpUrl="/auth/signup"
                 afterSignInUrl="/"
                 appearance={{
+                  baseTheme: undefined,
+                  variables: {
+                    colorBackground: '#ffffff',
+                    colorText: '#000000',
+                    colorPrimary: '#6366f1',
+                  },
                   elements: {
                     rootBox: 'w-full',
-                    card: 'shadow-xl border-0 bg-card/50 backdrop-blur-sm',
-                    headerTitle: 'text-2xl font-semibold',
-                    headerSubtitle: 'text-muted-foreground',
-                    socialButtonsBlockButton: 'border border-input hover:bg-accent',
+                    card: 'shadow-xl border bg-white',
+                    headerTitle: 'text-2xl font-semibold text-gray-900',
+                    headerSubtitle: 'text-gray-600',
+                    socialButtonsBlockButton: 'border border-gray-200 hover:bg-gray-50 text-gray-700',
                     formButtonPrimary: 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20',
                     footerActionLink: 'text-primary hover:text-primary/80',
+                    formFieldInput: 'bg-white border-gray-300 text-gray-900',
+                    formFieldLabel: 'text-gray-700',
+                    dividerLine: 'bg-gray-200',
+                    dividerText: 'text-gray-500',
                   },
                 }}
               />
