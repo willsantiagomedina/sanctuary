@@ -73,6 +73,7 @@ export interface SanctuaryAPI {
     onOpen: (callback: () => void) => () => void;
     onSave: (callback: () => void) => () => void;
     onPresentationStart: (callback: () => void) => () => void;
+    onInsertSong: (callback: () => void) => () => void;
   };
 
   // Auto updater
@@ -161,6 +162,7 @@ const api: SanctuaryAPI = {
     onOpen: (callback) => createEventHandler('file:open', callback),
     onSave: (callback) => createEventHandler('file:save', callback),
     onPresentationStart: (callback) => createEventHandler('presentation:start', callback),
+    onInsertSong: (callback) => createEventHandler('insert:song', callback),
   },
 
   // Auto updater

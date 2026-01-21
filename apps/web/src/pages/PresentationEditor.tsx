@@ -44,6 +44,7 @@ import { getSeedVerseNumbers, getSeedVerseText } from '../lib/bible-seed';
 import { EditorMenuBar } from '../components/editor/EditorMenuBar';
 import { FormattingToolbar } from '../components/editor/FormattingToolbar';
 import { KeyboardShortcutsDialog } from '../components/editor';
+import { useMenuEvents } from '../hooks/useElectron';
 import { useEditorStore } from '../stores/editor';
 
 // Types
@@ -147,6 +148,10 @@ export default function PresentationEditor() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const textInputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useMenuEvents({
+    onInsertSong: () => setShowSongDialog(true),
+  });
 
   // Load presentation
   useEffect(() => {

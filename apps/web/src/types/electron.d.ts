@@ -92,6 +92,7 @@ export interface SanctuaryElectronAPI {
     onOpen: (callback: () => void) => () => void;
     onSave: (callback: () => void) => () => void;
     onPresentationStart: (callback: () => void) => () => void;
+    onInsertSong: (callback: () => void) => () => void;
   };
 }
 

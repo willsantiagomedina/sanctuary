@@ -377,6 +377,15 @@ function createMenu() {
       ],
     },
     {
+      label: 'Insert',
+      submenu: [
+        {
+          label: 'Song Lyrics',
+          click: () => mainWindow?.webContents.send('insert:song'),
+        },
+      ],
+    },
+    {
       label: 'Presentation',
       submenu: [
         {

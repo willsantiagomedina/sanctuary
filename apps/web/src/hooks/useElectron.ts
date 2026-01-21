@@ -237,6 +237,7 @@ export function useMenuEvents(handlers: {
   onOpen?: () => void;
   onSave?: () => void;
   onPresentationStart?: () => void;
+  onInsertSong?: () => void;
 }) {
   const { api } = useElectron();
 
@@ -257,11 +258,21 @@ export function useMenuEvents(handlers: {
     if (handlers.onPresentationStart) {
       unsubscribers.push(api.menu.onPresentationStart(handlers.onPresentationStart));
     }
+    if (handlers.onInsertSong) {
+      unsubscribers.push(api.menu.onInsertSong(handlers.onInsertSong));
+    }
 
     return () => {
       unsubscribers.forEach(unsub => unsub());
     };
-  }, [api, handlers.onNew, handlers.onOpen, handlers.onSave, handlers.onPresentationStart]);
+  }, [
+    api,
+    handlers.onNew,
+    handlers.onOpen,
+    handlers.onSave,
+    handlers.onPresentationStart,
+    handlers.onInsertSong,
+  ]);
 }
 
 /**
