@@ -23,6 +23,7 @@ import {
   Square,
   Circle,
   BookOpen,
+  Music,
   Plus,
   Trash2,
   Layers,
@@ -102,6 +103,7 @@ export interface EditorMenuBarProps {
   onInsertImage: () => void;
   onInsertShape: (shape: string) => void;
   onInsertVerse: () => void;
+  onInsertSong: () => void;
   onInsertSlide: () => void;
   onChangeBackground: () => void;
   
@@ -380,6 +382,7 @@ export function EditorMenuBar(props: EditorMenuBarProps) {
         { id: 'text', label: 'Text box', shortcut: 'T', icon: Type, action: props.onInsertText },
         { id: 'image', label: 'Image', shortcut: 'I', icon: Image, action: props.onInsertImage },
         { id: 'verse', label: 'Bible verse', shortcut: 'V', icon: BookOpen, action: props.onInsertVerse },
+        { id: 'song', label: 'Song lyrics', shortcut: 'S', icon: Music, action: props.onInsertSong },
       ],
     },
     {
