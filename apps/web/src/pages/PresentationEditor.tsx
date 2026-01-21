@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { Button, cn, Input, Label, ScrollArea, Separator, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent, Slider } from '@sanctuary/ui';
 import { FONT_FAMILIES, FONT_SIZES, TEXT_COLORS, BACKGROUND_COLORS, GRADIENTS } from '../data/fonts';
+import { ALL_SONGS, getSongsByLanguage, type Song, type SongSection } from '../data/songs';
 import { useBibleBooks, useBibleChapters, useBibleSearch, useBibleTranslations, useBibleVerses } from '../hooks/useBible';
 import { getSeedVerseNumbers, getSeedVerseText } from '../lib/bible-seed';
 import { EditorMenuBar } from '../components/editor/EditorMenuBar';
@@ -124,6 +125,7 @@ export default function PresentationEditor() {
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
   const [showBibleDialog, setShowBibleDialog] = useState(false);
+  const [showSongDialog, setShowSongDialog] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
@@ -680,6 +682,54 @@ export default function PresentationEditor() {
     nudgeElement,
   ]);
 
+  // Song insertion
+  const handleInsertSong = useCallback((song: Song, section?: SongSection) => {
+    if (!presentation || !currentSlide) return;
+    saveToHistory();
+
+    const sections = section
+      ? [section]
+      : song.sections?.length
+        ? song.sections
+        : [{ type: 'verse', label: 'Lyrics', lyrics: song.lyrics }];
+    const background = { ...currentSlide.background };
+    const baseId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const newSlides = sections.map((part, index) => ({
+      id: `slide-${baseId}-${index}`,
+      background,
+      elements: [
+        {
+          id: `el-${baseId}-${index}`,
+          type: 'text',
+          x: 80,
+          y: 110,
+          width: 800,
+          height: 320,
+          content: part.lyrics,
+          style: {
+            fontFamily: 'Inter',
+            fontSize: 36,
+            fontWeight: '400',
+            color: '#ffffff',
+            textAlign: 'center',
+            verticalAlign: 'middle',
+            padding: 24,
+          },
+        },
+      ],
+    }));
+
+    const insertIndex = Math.min(currentSlideIndex + 1, presentation.slides.length);
+    setPresentation(prev => {
+      if (!prev) return prev;
+      const slides = [...prev.slides];
+      slides.splice(insertIndex, 0, ...newSlides);
+      return { ...prev, slides };
+    });
+    setCurrentSlideIndex(insertIndex);
+    setShowSongDialog(false);
+  }, [presentation, currentSlide, currentSlideIndex, saveToHistory]);
+
   // Bible insertion
   const handleInsertVerse = useCallback((book: string, chapter: number, verse: number, text: string, translation: string) => {
     const content = `"${text}"\n— ${book} ${chapter}:${verse} (${translation})`;
@@ -821,6 +871,7 @@ export default function PresentationEditor() {
             } 
           })}
           onInsertVerse={() => setShowBibleDialog(true)}
+          onInsertSong={() => setShowSongDialog(true)}
           onInsertSlide={addSlide}
           onChangeBackground={() => setShowBackgroundPicker(true)}
           
@@ -1354,6 +1405,16 @@ export default function PresentationEditor() {
           </div>
         )}
       </div>
+
+      {/* Song Insert Dialog */}
+      <Dialog open={showSongDialog} onOpenChange={setShowSongDialog}>
+        <DialogContent className="max-w-3xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>Insert Song</DialogTitle>
+          </DialogHeader>
+          <SongSelector onInsert={handleInsertSong} />
+        </DialogContent>
+      </Dialog>
 
       {/* Bible Verse Dialog */}
       <Dialog open={showBibleDialog} onOpenChange={setShowBibleDialog}>
