@@ -1566,6 +1566,111 @@ export default function PresentationEditor() {
   );
 }
 
+// Song Selector Component
+function SongSelector({ onInsert }: { onInsert: (song: Song, section?: SongSection) => void }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState<'all' | 'en' | 'es' | 'ja'>('all');
+  const [expandedSongId, setExpandedSongId] = useState<string | null>(null);
+
+  const filteredSongs = useMemo(() => {
+    let songs = selectedLanguage === 'all' ? ALL_SONGS : getSongsByLanguage(selectedLanguage);
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      songs = songs.filter(s =>
+        s.title.toLowerCase().includes(query) ||
+        s.artist.toLowerCase().includes(query) ||
+        s.tags.some(t => t.toLowerCase().includes(query))
+      );
+    }
+    return songs;
+  }, [selectedLanguage, searchQuery]);
+
+  useEffect(() => {
+    if (!expandedSongId) return;
+    if (!filteredSongs.some(song => song.id === expandedSongId)) {
+      setExpandedSongId(null);
+    }
+  }, [expandedSongId, filteredSongs]);
+
+  return (
+    <div className="space-y-3">
+      <Input
+        placeholder="Search songs..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+      <Tabs value={selectedLanguage} onValueChange={(value) => setSelectedLanguage(value as 'all' | 'en' | 'es' | 'ja')}>
+        <TabsList className="w-full">
+          <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+          <TabsTrigger value="en" className="flex-1">English</TabsTrigger>
+          <TabsTrigger value="es" className="flex-1">Spanish</TabsTrigger>
+          <TabsTrigger value="ja" className="flex-1">Japanese</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {filteredSongs.length === 0 ? (
+        <div className="text-sm text-muted-foreground text-center py-10">
+          No songs found.
+        </div>
+      ) : (
+        <ScrollArea className="h-96 pr-2">
+          <div className="space-y-2">
+            {filteredSongs.map(song => {
+              const isExpanded = expandedSongId === song.id;
+              return (
+                <div key={song.id} className="border rounded-lg p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      className="flex-1 text-left"
+                      onClick={() => setExpandedSongId(isExpanded ? null : song.id)}
+                    >
+                      <div className="text-sm font-medium">{song.title}</div>
+                      <div className="text-xs text-muted-foreground">{song.artist}</div>
+                    </button>
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="secondary" onClick={() => onInsert(song)}>
+                        Insert Song
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => setExpandedSongId(isExpanded ? null : song.id)}
+                      >
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="mt-3 space-y-2">
+                      {song.sections.map((section, index) => {
+                        const preview = section.lyrics.split('\n')[0] || section.lyrics;
+                        return (
+                          <button
+                            key={`${song.id}-${index}`}
+                            className="w-full text-left border rounded-md px-2 py-1.5 hover:bg-secondary transition-colors"
+                            onClick={() => onInsert(song, section)}
+                          >
+                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                              {section.label}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{preview}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      )}
+    </div>
+  );
+}
+
 // Bible Selector Component
 function BibleSelector({ onSelect }: { onSelect: (book: string, chapter: number, verse: number, text: string, translation: string) => void }) {
   const { translations } = useBibleTranslations();
