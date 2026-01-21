@@ -132,6 +132,7 @@ interface EditorState {
   
   // Dialogs
   showBibleDialog: boolean;
+  showSongDialog: boolean;
   showSearchDialog: boolean;
   showShortcutsDialog: boolean;
   showPresetsDialog: boolean;
@@ -173,6 +174,7 @@ interface EditorState {
   setPropertiesPanelTab: (tab: 'format' | 'animation' | 'notes') => void;
   
   setShowBibleDialog: (show: boolean) => void;
+  setShowSongDialog: (show: boolean) => void;
   setShowSearchDialog: (show: boolean) => void;
   setShowShortcutsDialog: (show: boolean) => void;
   setShowPresetsDialog: (show: boolean) => void;
@@ -289,6 +291,7 @@ export const useEditorStore = create<EditorState>()(
       propertiesPanelTab: 'format',
       
       showBibleDialog: false,
+      showSongDialog: false,
       showSearchDialog: false,
       showShortcutsDialog: false,
       showPresetsDialog: false,
@@ -339,6 +342,7 @@ export const useEditorStore = create<EditorState>()(
       setPropertiesPanelTab: (tab) => set({ propertiesPanelTab: tab }),
       
       setShowBibleDialog: (show) => set({ showBibleDialog: show }),
+      setShowSongDialog: (show) => set({ showSongDialog: show }),
       setShowSearchDialog: (show) => set({ showSearchDialog: show }),
       setShowShortcutsDialog: (show) => set({ showShortcutsDialog: show }),
       setShowPresetsDialog: (show) => set({ showPresetsDialog: show }),

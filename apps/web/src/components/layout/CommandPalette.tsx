@@ -86,6 +86,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
     recentCommands,
     addRecentCommand,
     setShowBibleDialog,
+    setShowSongDialog,
     setShowSearchDialog,
     setShowShortcutsDialog,
     setShowPresetsDialog,
@@ -180,6 +181,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
                     onSelect={() => {
                       // Re-trigger the action based on stored action
                       if (cmd.action === 'insert-verse') setShowBibleDialog(true);
+                      if (cmd.action === 'insert-song') setShowSongDialog(true);
                       if (cmd.action === 'global-search') setShowSearchDialog(true);
                       if (cmd.action === 'new-presentation') createPresentation();
                       setCommandPaletteOpen(false);
@@ -207,6 +209,11 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Insert Verse</span>
                   <CommandShortcut>⌘⇧V</CommandShortcut>
+                </CommandItem>
+                <CommandItem onSelect={() => runCommand(() => setShowSongDialog(true), 'Insert Song', 'insert-song')}>
+                  <Music className="mr-2 h-4 w-4" />
+                  <span>Insert Song</span>
+                  <CommandShortcut>⌘⇧S</CommandShortcut>
                 </CommandItem>
                 <CommandItem onSelect={() => runCommand(() => {}, 'Insert Image', 'insert-image')}>
                   <Image className="mr-2 h-4 w-4" />

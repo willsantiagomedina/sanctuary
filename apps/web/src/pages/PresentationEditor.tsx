@@ -44,6 +44,7 @@ import { getSeedVerseNumbers, getSeedVerseText } from '../lib/bible-seed';
 import { EditorMenuBar } from '../components/editor/EditorMenuBar';
 import { FormattingToolbar } from '../components/editor/FormattingToolbar';
 import { KeyboardShortcutsDialog } from '../components/editor';
+import { useEditorStore } from '../stores/editor';
 
 // Types
 interface SlideElement {
@@ -124,8 +125,10 @@ export default function PresentationEditor() {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
-  const [showBibleDialog, setShowBibleDialog] = useState(false);
-  const [showSongDialog, setShowSongDialog] = useState(false);
+  const showBibleDialog = useEditorStore(state => state.showBibleDialog);
+  const setShowBibleDialog = useEditorStore(state => state.setShowBibleDialog);
+  const showSongDialog = useEditorStore(state => state.showSongDialog);
+  const setShowSongDialog = useEditorStore(state => state.setShowSongDialog);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
