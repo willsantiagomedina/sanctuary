@@ -19,20 +19,13 @@ export interface AuthActions {
 
 export type UseAuthReturn = AuthState & AuthActions;
 
-/**
- * Main auth hook - uses Clerk when configured, otherwise returns null user
- */
-export function useAppAuth(): UseAuthReturn {
-  if (!isClerkConfigured) {
-    return {
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      getToken: async () => null,
-    };
-  }
-
-  return useClerkAuth();
+function useNoopAuth(): UseAuthReturn {
+  return {
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    getToken: async () => null,
+  };
 }
 
 function useClerkAuth(): UseAuthReturn {
@@ -55,6 +48,12 @@ function useClerkAuth(): UseAuthReturn {
     getToken: fetchToken,
   }), [user, isLoaded, fetchToken]);
 }
+
+/**
+ * Main auth hook - uses Clerk when configured, otherwise returns null user.
+ * The selection happens at module load time to keep hook ordering stable.
+ */
+export const useAppAuth = isClerkConfigured ? useClerkAuth : useNoopAuth;
 
 // Re-export for backwards compatibility
 export const useBetterAuth = useAppAuth;
