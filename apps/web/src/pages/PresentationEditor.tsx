@@ -696,7 +696,7 @@ export default function PresentationEditor() {
     const baseId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const newSlides = sections.map((part, index) => ({
       id: `slide-${baseId}-${index}`,
-      background,
+      background: { ...background },
       elements: [
         {
           id: `el-${baseId}-${index}`,
