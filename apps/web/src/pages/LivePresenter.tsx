@@ -235,7 +235,7 @@ export default function LivePresenter() {
       let nextPos = currentPos + rotationDirectionRef.current;
       if (nextPos >= rotationIndices.length || nextPos < 0) {
         if (!activeRotationGroup.loop) return null;
-        rotationDirectionRef.current = rotationDirectionRef.current * -1;
+        rotationDirectionRef.current = rotationDirectionRef.current === 1 ? -1 : 1;
         nextPos = currentPos + rotationDirectionRef.current;
       }
       return rotationIndices[Math.max(0, Math.min(nextPos, rotationIndices.length - 1))];

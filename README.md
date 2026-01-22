@@ -2,6 +2,8 @@
 
 A cloud-native worship presentation platform that reimagines FreeShow's functionality with the aesthetic polish of Notion and the intuitive workflow of Google Slides.
 
+For in-depth documentation, including architecture, development setup, and detailed component breakdowns, please refer to the [documentation directory](./docs/README.md).
+
 ## ✨ Features
 
 - **Modern Slide Editor** - Canvas-based editor with horizontal filmstrip, real-time collaboration

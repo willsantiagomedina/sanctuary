@@ -549,6 +549,7 @@ export default function PresentationEditor() {
   const [showLayoutPicker, setShowLayoutPicker] = useState(false);
   const [showRotationDialog, setShowRotationDialog] = useState(false);
   const [activeRotationGroupId, setActiveRotationGroupId] = useState<string | null>(null);
+  const [rotationSelectionIds, setRotationSelectionIds] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -684,11 +685,11 @@ export default function PresentationEditor() {
 
   const rotationGroups = presentation?.rotationGroups || [];
   const activeRotationGroup = rotationGroups.find(group => group.id === activeRotationGroupId) || null;
-  const orderedSelectedSlideIds = useMemo(() => {
+  const orderedRotationSelectionIds = useMemo(() => {
     if (!presentation) return [];
-    const selectedSet = new Set(selectedSlideIds);
+    const selectedSet = new Set(rotationSelectionIds);
     return presentation.slides.filter(slide => selectedSet.has(slide.id)).map(slide => slide.id);
-  }, [presentation, selectedSlideIds]);
+  }, [presentation, rotationSelectionIds]);
 
   const createRotationGroup = useCallback((slideIds: string[]) => {
     if (!presentation || slideIds.length === 0) return;
@@ -806,6 +807,14 @@ export default function PresentationEditor() {
     }
   }, [showRotationDialog, activeRotationGroupId, rotationGroups]);
 
+  useEffect(() => {
+    if (!presentation) return;
+    setRotationSelectionIds(prev => {
+      const validIds = prev.filter(id => presentation.slides.some(slide => slide.id === id));
+      return validIds;
+    });
+  }, [presentation]);
+
   const slideIndexById = useMemo(() => {
     if (!presentation) return new Map<string, number>();
     return new Map(presentation.slides.map((slide, index) => [slide.id, index]));
@@ -815,6 +824,21 @@ export default function PresentationEditor() {
     if (!presentation) return new Map<string, Slide>();
     return new Map(presentation.slides.map(slide => [slide.id, slide]));
   }, [presentation]);
+
+  const toggleRotationSelection = useCallback((slideId: string) => {
+    setRotationSelectionIds(prev => (
+      prev.includes(slideId) ? prev.filter(id => id !== slideId) : [...prev, slideId]
+    ));
+  }, []);
+
+  const selectAllRotationSlides = useCallback(() => {
+    if (!presentation) return;
+    setRotationSelectionIds(presentation.slides.map(slide => slide.id));
+  }, [presentation]);
+
+  const clearRotationSelection = useCallback(() => {
+    setRotationSelectionIds([]);
+  }, []);
 
   const layoutTheme = useMemo(() => {
     return LAYOUT_THEMES.find(theme => theme.id === layoutThemeId) || LAYOUT_THEMES[0];
@@ -2269,7 +2293,10 @@ export default function PresentationEditor() {
               variant="outline"
               size="sm"
               className="w-full justify-between"
-              onClick={() => setShowRotationDialog(true)}
+              onClick={() => {
+                setRotationSelectionIds(selectedSlideIds);
+                setShowRotationDialog(true);
+              }}
             >
               <span className="flex items-center gap-2">
                 <RotateCcw className="h-4 w-4" />
@@ -2873,8 +2900,8 @@ export default function PresentationEditor() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => createRotationGroup(orderedSelectedSlideIds)}
-                  disabled={orderedSelectedSlideIds.length === 0}
+                  onClick={() => createRotationGroup(orderedRotationSelectionIds)}
+                  disabled={orderedRotationSelectionIds.length === 0}
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
                   New from selection
@@ -2883,7 +2910,7 @@ export default function PresentationEditor() {
               <ScrollArea className="h-[360px] pr-2">
                 {rotationGroups.length === 0 ? (
                   <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    Select slides in the filmstrip and create your first rotation group.
+                    Choose slides below or in the filmstrip, then create your first rotation group.
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -2912,6 +2939,50 @@ export default function PresentationEditor() {
                   </div>
                 )}
               </ScrollArea>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Selection
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {orderedRotationSelectionIds.length} chosen
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <button
+                    className="hover:text-foreground"
+                    onClick={() => setRotationSelectionIds(selectedSlideIds)}
+                  >
+                    Use filmstrip
+                  </button>
+                  <button className="hover:text-foreground" onClick={selectAllRotationSlides}>
+                    Select all
+                  </button>
+                  <button className="hover:text-foreground" onClick={clearRotationSelection}>
+                    Clear
+                  </button>
+                </div>
+                <ScrollArea className="h-28 pr-2">
+                  <div className="grid grid-cols-6 gap-1">
+                    {presentation.slides.map((slide, idx) => {
+                      const isSelected = rotationSelectionIds.includes(slide.id);
+                      return (
+                        <button
+                          key={`rotation-select-${slide.id}`}
+                          className={cn(
+                            "h-7 rounded-md text-[11px] font-medium transition-colors",
+                            isSelected ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"
+                          )}
+                          onClick={() => toggleRotationSelection(slide.id)}
+                        >
+                          {idx + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -3030,16 +3101,16 @@ export default function PresentationEditor() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => replaceRotationGroupSlides(activeRotationGroup.id, orderedSelectedSlideIds)}
-                        disabled={orderedSelectedSlideIds.length === 0}
+                        onClick={() => replaceRotationGroupSlides(activeRotationGroup.id, orderedRotationSelectionIds)}
+                        disabled={orderedRotationSelectionIds.length === 0}
                       >
                         Replace with selection
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => addSlidesToRotationGroup(activeRotationGroup.id, orderedSelectedSlideIds)}
-                        disabled={orderedSelectedSlideIds.length === 0}
+                        onClick={() => addSlidesToRotationGroup(activeRotationGroup.id, orderedRotationSelectionIds)}
+                        disabled={orderedRotationSelectionIds.length === 0}
                       >
                         Add selection
                       </Button>
