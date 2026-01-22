@@ -113,6 +113,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: npm
           command: |
             r2 object put sanctuary-assets/releases/ --file releases/electron-mac/ --recursive || true
             r2 object put sanctuary-assets/releases/ --file releases/electron-win/ --recursive || true
