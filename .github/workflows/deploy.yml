@@ -58,7 +58,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Deploy Convex functions
-        run: npx convex deploy --cmd 'echo "Convex deployed"'
+        run: pnpm --filter @sanctuary/convex deploy
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
