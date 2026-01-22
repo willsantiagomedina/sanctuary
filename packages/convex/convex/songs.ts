@@ -20,10 +20,11 @@ export const searchSongs = query({
   },
   handler: async (ctx, args) => {
     if (args.language) {
+      const language = args.language;
       return await ctx.db
         .query("songs")
         .withSearchIndex("search_title", (q) =>
-          q.search("title", args.query).eq("language", args.language)
+          q.search("title", args.query).eq("language", language)
         )
         .take(50);
     }

@@ -152,9 +152,9 @@ export const duplicate = mutation({
     if (!slide) throw new Error('Slide not found');
 
     const now = Date.now();
+    const { _id, _creationTime, ...slideData } = slide;
     const newSlideId = await ctx.db.insert('slides', {
-      ...slide,
-      _id: undefined as any,
+      ...slideData,
       createdAt: now,
       updatedAt: now,
     });

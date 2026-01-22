@@ -7,6 +7,10 @@
  * 
  * @see https://docs.convex.dev/auth/clerk
  */
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 export default {
   providers: [
     {

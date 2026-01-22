@@ -6,13 +6,13 @@ const run = async () => {
   const convexUrl = process.env.CONVEX_URL || process.env.VITE_CONVEX_URL;
   const adminKey = process.env.CONVEX_ADMIN_KEY;
 
-  if (!convexUrl || !adminKey) {
-    throw new Error('CONVEX_URL (or VITE_CONVEX_URL) and CONVEX_ADMIN_KEY must be set.');
+  if (!convexUrl) {
+    throw new Error('CONVEX_URL (or VITE_CONVEX_URL) must be set.');
   }
 
   const datasetsFile = await readFile(new URL('./bible-datasets.json', import.meta.url), 'utf8');
   const datasets = JSON.parse(datasetsFile);
-  const client = new ConvexHttpClient(convexUrl, { adminKey });
+  const client = new ConvexHttpClient(convexUrl, adminKey ? { adminKey } : undefined);
 
   for (const dataset of datasets) {
     const converted = await readFile(
