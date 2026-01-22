@@ -50,8 +50,10 @@ export function Sidebar() {
     <aside
       className={cn(
         'fixed left-0 top-0 z-40 h-screen border-r transition-all duration-300 ease-in-out',
-        'bg-background/80 backdrop-blur-xl',
-        sidebarOpen ? 'w-64' : 'w-16'
+        'w-64 bg-card/95 backdrop-blur-md shadow-lg md:shadow-none',
+        sidebarOpen
+          ? 'translate-x-0 md:w-64'
+          : '-translate-x-full md:translate-x-0 md:w-16'
       )}
     >
       <div className="flex h-full flex-col">
@@ -182,7 +184,7 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-primary/10 text-foreground ring-1 ring-inset ring-primary/15'
                     : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                 )}
               >
@@ -197,13 +199,13 @@ export function Sidebar() {
                 <TooltipTrigger asChild>
                   <Link
                     to={item.path}
-                    className={cn(
-                      'flex items-center justify-center p-2.5 rounded-xl transition-all duration-200',
-                      isActive
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                    )}
-                  >
+                className={cn(
+                  'flex items-center justify-center p-2.5 rounded-xl transition-all duration-200',
+                  isActive
+                    ? 'bg-primary/10 text-foreground ring-1 ring-inset ring-primary/15'
+                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                )}
+              >
                     <Icon className="h-4 w-4" />
                   </Link>
                 </TooltipTrigger>

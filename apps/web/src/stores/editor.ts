@@ -208,7 +208,7 @@ const DEFAULT_STYLE_PRESETS: StylePreset[] = [
     name: 'Scripture Verse',
     category: 'verse',
     style: {
-      fontFamily: 'Merriweather',
+      fontFamily: 'Newsreader',
       fontSize: 32,
       fontWeight: '400',
       color: '#ffffff',
@@ -222,7 +222,7 @@ const DEFAULT_STYLE_PRESETS: StylePreset[] = [
     name: 'Title',
     category: 'title',
     style: {
-      fontFamily: 'Inter',
+      fontFamily: 'Instrument Sans',
       fontSize: 48,
       fontWeight: '700',
       color: '#ffffff',
@@ -235,7 +235,7 @@ const DEFAULT_STYLE_PRESETS: StylePreset[] = [
     name: 'Chorus',
     category: 'chorus',
     style: {
-      fontFamily: 'Inter',
+      fontFamily: 'Instrument Sans',
       fontSize: 36,
       fontWeight: '600',
       color: '#ffffff',
@@ -249,7 +249,7 @@ const DEFAULT_STYLE_PRESETS: StylePreset[] = [
     name: 'Caption',
     category: 'caption',
     style: {
-      fontFamily: 'Inter',
+      fontFamily: 'Instrument Sans',
       fontSize: 18,
       fontWeight: '400',
       color: 'rgba(255,255,255,0.8)',
@@ -262,7 +262,7 @@ const DEFAULT_STYLE_PRESETS: StylePreset[] = [
     name: 'Body Text',
     category: 'body',
     style: {
-      fontFamily: 'Inter',
+      fontFamily: 'Instrument Sans',
       fontSize: 24,
       fontWeight: '400',
       color: '#ffffff',
@@ -285,7 +285,7 @@ export const useEditorStore = create<EditorState>()(
       
       zoom: 100,
       showGrid: false,
-      snapToGrid: true,
+      snapToGrid: false,
       gridSize: 20,
       showPropertiesPanel: false,
       propertiesPanelTab: 'format',

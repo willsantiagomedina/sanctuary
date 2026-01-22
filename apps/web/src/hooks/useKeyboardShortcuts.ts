@@ -91,7 +91,7 @@ export function useKeyboardShortcuts(customShortcuts?: Shortcut[]) {
       // Editing
       {
         id: 'insert-verse',
-        keys: ['meta', 'shift', 'v'],
+        keys: ['meta', 'shift', 'b'],
         label: 'Insert Verse',
         description: 'Open Bible verse selector',
         category: 'editing',

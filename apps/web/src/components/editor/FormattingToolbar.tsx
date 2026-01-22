@@ -243,7 +243,7 @@ export function FormattingToolbar(props: FormattingToolbarProps) {
   const {
     selectedElementType,
     selectedElementId,
-    fontFamily = 'Inter',
+    fontFamily = 'Instrument Sans',
     fontSize = 24,
     fontWeight = '400',
     textAlign = 'center',

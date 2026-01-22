@@ -7,9 +7,7 @@ import {
   Star,
   ChevronRight,
   Copy,
-  Heart,
   Check,
-  Bookmark,
   Sparkles,
 } from 'lucide-react';
 import { 
@@ -32,6 +30,7 @@ import {
 import { formatReference } from '../data/bible';
 import { useBibleBooks, useBibleChapters, useBibleSearch, useBibleTranslations, useBibleVerses } from '../hooks/useBible';
 import { getSeedVerseNumbers, getSeedVerseText } from '../lib/bible-seed';
+import { PageHeader } from '../components/layout/PageHeader';
 
 const POPULAR_VERSES = [
   { book: 'John', chapter: 3, verse: 16, preview: 'For God so loved the world...' },
@@ -158,7 +157,7 @@ export default function BibleExplorer() {
           height: 300,
           content: `"${text}"\n\n— ${reference}`,
           style: {
-            fontFamily: 'Merriweather',
+            fontFamily: 'Newsreader',
             fontSize: 32,
             fontWeight: '400',
             color: '#ffffff',
@@ -183,45 +182,35 @@ export default function BibleExplorer() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="border-b bg-gradient-to-br from-purple-500/5 via-background to-indigo-500/5">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-              <BookOpen className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Bible Explorer</h1>
-              <p className="text-muted-foreground">Find and add scripture to your presentations</p>
-            </div>
-          </div>
-          
-          {/* Version selector */}
-          <div className="flex gap-2 mt-6 flex-wrap">
-            {translations.map((translation) => (
-              <button
-                key={translation.id}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-sm font-medium transition-all",
-                  selectedVersion === translation.id
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-secondary/50 hover:bg-secondary"
-                )}
-                onClick={() => {
-                  setSelectedVersion(translation.id);
-                  setSelectedBook('John');
-                  setSelectedChapter(3);
-                  setSelectedVerse(16);
-                }}
-              >
-                {translation.abbreviation}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Bible Explorer"
+        description="Find and add scripture to your presentations"
+        icon={<BookOpen className="h-5 w-5" />}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Version selector */}
+        <div className="flex gap-2 flex-wrap mb-6">
+          {translations.map((translation) => (
+            <button
+              key={translation.id}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors ring-1 ring-inset",
+                selectedVersion === translation.id
+                  ? "bg-primary/10 text-foreground ring-primary/20"
+                  : "bg-card/70 text-muted-foreground ring-border/60 hover:bg-card"
+              )}
+              onClick={() => {
+                setSelectedVersion(translation.id);
+                setSelectedBook('John');
+                setSelectedChapter(3);
+                setSelectedVerse(16);
+              }}
+            >
+              {translation.abbreviation}
+            </button>
+          ))}
+        </div>
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">

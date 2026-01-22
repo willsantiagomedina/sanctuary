@@ -8,19 +8,12 @@ export interface FontFamily {
 
 export const FONT_FAMILIES: FontFamily[] = [
   // Sans-serif
+  { name: 'Instrument Sans', value: 'Instrument Sans', category: 'sans-serif' },
   { name: 'Inter', value: 'Inter', category: 'sans-serif' },
-  { name: 'Open Sans', value: 'Open Sans', category: 'sans-serif' },
-  { name: 'Roboto', value: 'Roboto', category: 'sans-serif' },
-  { name: 'Montserrat', value: 'Montserrat', category: 'sans-serif' },
-  { name: 'Poppins', value: 'Poppins', category: 'sans-serif' },
-  { name: 'Raleway', value: 'Raleway', category: 'sans-serif' },
-  { name: 'Source Sans 3', value: 'Source Sans 3', category: 'sans-serif' },
   
   // Serif
-  { name: 'Playfair Display', value: 'Playfair Display', category: 'serif' },
-  { name: 'Lora', value: 'Lora', category: 'serif' },
-  { name: 'Merriweather', value: 'Merriweather', category: 'serif' },
-  
+  { name: 'Newsreader', value: 'Newsreader', category: 'serif' },
+
   // Japanese
   { name: 'Noto Sans JP', value: 'Noto Sans JP', category: 'japanese' },
   { name: 'Noto Serif JP', value: 'Noto Serif JP', category: 'japanese' },

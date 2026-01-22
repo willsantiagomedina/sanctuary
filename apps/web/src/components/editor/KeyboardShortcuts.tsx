@@ -10,7 +10,6 @@ const ALL_SHORTCUTS = {
     { keys: ['meta', 'k'], label: 'Command Palette', description: 'Open command palette' },
     { keys: ['meta', 'p'], label: 'Global Search', description: 'Search everything' },
     { keys: ['meta', 'g'], label: 'Jump to Slide', description: 'Go to specific slide' },
-    { keys: ['meta', 'b'], label: 'Bible Explorer', description: 'Open Bible explorer' },
   ],
   editing: [
     { keys: ['meta', 'z'], label: 'Undo', description: 'Undo last action' },
@@ -20,6 +19,7 @@ const ALL_SHORTCUTS = {
     { keys: ['meta', 'v'], label: 'Paste', description: 'Paste clipboard' },
     { keys: ['meta', 'x'], label: 'Cut', description: 'Cut selection' },
     { keys: ['meta', 'a'], label: 'Select All', description: 'Select all elements' },
+    { keys: ['meta', 'shift', 'b'], label: 'Insert Verse', description: 'Open Bible verse selector' },
     { keys: ['delete'], label: 'Delete', description: 'Delete selection' },
     { keys: ['escape'], label: 'Deselect', description: 'Clear selection' },
     { keys: ['arrowup'], label: 'Nudge Up', description: 'Move element up 1px' },

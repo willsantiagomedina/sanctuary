@@ -49,6 +49,7 @@ import {
   Star,
   Hexagon,
   Settings,
+  MonitorPlay,
 } from 'lucide-react';
 import { cn, Button, Separator } from '@sanctuary/ui';
 
@@ -95,8 +96,13 @@ export interface EditorMenuBarProps {
   onToggleGrid: () => void;
   showRulers: boolean;
   onToggleRulers: () => void;
+  snapToGrid: boolean;
+  onToggleSnapToGrid: () => void;
+  showSpeakerNotes: boolean;
+  onToggleSpeakerNotes: () => void;
   onFullscreen: () => void;
   onPresent: () => void;
+  onPresenterView: () => void;
   
   // Insert operations
   onInsertText: () => void;
@@ -151,7 +157,7 @@ function MenuItem({
         "w-full flex items-center gap-3 px-3 py-1.5 text-sm rounded-md transition-colors",
         command.disabled 
           ? "text-muted-foreground cursor-not-allowed" 
-          : "hover:bg-accent"
+          : "hover:bg-muted"
       )}
       onClick={() => {
         if (!command.disabled) {
@@ -195,14 +201,14 @@ function SubMenu({
       onMouseEnter={() => setShowSubmenu(true)}
       onMouseLeave={() => setShowSubmenu(false)}
     >
-      <button className="w-full flex items-center gap-3 px-3 py-1.5 text-sm rounded-md hover:bg-accent">
+      <button className="w-full flex items-center gap-3 px-3 py-1.5 text-sm rounded-md hover:bg-muted">
         {Icon && <Icon className="h-4 w-4" />}
         <span className="flex-1 text-left">{label}</span>
         <ChevronRight className="h-4 w-4" />
       </button>
       
       {showSubmenu && (
-        <div className="absolute left-full top-0 ml-1 w-48 bg-popover border rounded-lg shadow-lg p-1 z-50">
+        <div className="absolute left-full top-0 ml-1 w-48 rounded-lg border border-border/60 bg-popover/95 shadow-lg p-1 z-50">
           {items.map((item, idx) => (
             <MenuItem key={idx} command={item} onClose={onClose} />
           ))}
@@ -220,7 +226,6 @@ function DropdownMenu({
   onOpen,
   onClose,
   submenus,
-  menuBarHasOpenMenu,
 }: { 
   label: string;
   sections: MenuSection[];
@@ -228,14 +233,17 @@ function DropdownMenu({
   onOpen: () => void;
   onClose: () => void;
   submenus?: { label: string; icon?: React.ComponentType<{ className?: string }>; items: EditorCommand[] }[];
-  menuBarHasOpenMenu: boolean;
 }) {
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onMouseEnter={() => onOpen()}
+      onMouseLeave={() => onClose()}
+    >
       <button
         className={cn(
           "px-3 py-1.5 text-sm rounded-md transition-colors",
-          isOpen ? "bg-accent" : "hover:bg-accent/50"
+          isOpen ? "bg-muted" : "hover:bg-muted/70"
         )}
         onClick={(e) => {
           e.stopPropagation();
@@ -245,19 +253,13 @@ function DropdownMenu({
             onOpen();
           }
         }}
-        onMouseEnter={() => {
-          // If any menu is open, switch to this one on hover
-          if (menuBarHasOpenMenu && !isOpen) {
-            onOpen();
-          }
-        }}
       >
         {label}
       </button>
       
       {isOpen && (
         <div 
-          className="absolute top-full left-0 mt-1 w-56 bg-popover border rounded-lg shadow-xl p-1 z-50"
+          className="absolute top-full left-0 mt-1 w-56 rounded-lg border border-border/60 bg-popover/95 shadow-xl p-1 z-50"
           onClick={(e) => e.stopPropagation()}
         >
           {sections.map((section, sIdx) => (
@@ -365,12 +367,15 @@ export function EditorMenuBar(props: EditorMenuBarProps) {
       items: [
         { id: 'grid', label: 'Show grid', icon: Grid3X3, action: props.onToggleGrid, checked: props.showGrid },
         { id: 'rulers', label: 'Show rulers', icon: Ruler, action: props.onToggleRulers, checked: props.showRulers },
+        { id: 'snap-grid', label: 'Snap to grid', icon: MousePointer2, action: props.onToggleSnapToGrid, checked: props.snapToGrid },
+        { id: 'notes', label: 'Show speaker notes', icon: MessageSquare, action: props.onToggleSpeakerNotes, checked: props.showSpeakerNotes },
       ],
     },
     {
       items: [
         { id: 'fullscreen', label: 'Fullscreen', shortcut: 'F11', icon: Maximize, action: props.onFullscreen },
         { id: 'present', label: 'Start presentation', shortcut: '⌘Enter', icon: Play, action: props.onPresent },
+        { id: 'presenter-view', label: 'Presenter view', icon: MonitorPlay, action: props.onPresenterView },
       ],
     },
   ];
@@ -488,7 +493,6 @@ export function EditorMenuBar(props: EditorMenuBarProps) {
         isOpen={openMenu === 'file'}
         onOpen={() => setOpenMenu('file')}
         onClose={closeMenu}
-        menuBarHasOpenMenu={openMenu !== null}
       />
       <DropdownMenu
         label="Edit"
@@ -496,7 +500,6 @@ export function EditorMenuBar(props: EditorMenuBarProps) {
         isOpen={openMenu === 'edit'}
         onOpen={() => setOpenMenu('edit')}
         onClose={closeMenu}
-        menuBarHasOpenMenu={openMenu !== null}
       />
       <DropdownMenu
         label="View"
@@ -504,7 +507,6 @@ export function EditorMenuBar(props: EditorMenuBarProps) {
         isOpen={openMenu === 'view'}
         onOpen={() => setOpenMenu('view')}
         onClose={closeMenu}
-        menuBarHasOpenMenu={openMenu !== null}
       />
       <DropdownMenu
         label="Insert"
@@ -513,7 +515,6 @@ export function EditorMenuBar(props: EditorMenuBarProps) {
         isOpen={openMenu === 'insert'}
         onOpen={() => setOpenMenu('insert')}
         onClose={closeMenu}
-        menuBarHasOpenMenu={openMenu !== null}
       />
       <DropdownMenu
         label="Slide"
@@ -521,7 +522,6 @@ export function EditorMenuBar(props: EditorMenuBarProps) {
         isOpen={openMenu === 'slide'}
         onOpen={() => setOpenMenu('slide')}
         onClose={closeMenu}
-        menuBarHasOpenMenu={openMenu !== null}
       />
       <DropdownMenu
         label="Arrange"
@@ -529,7 +529,6 @@ export function EditorMenuBar(props: EditorMenuBarProps) {
         isOpen={openMenu === 'arrange'}
         onOpen={() => setOpenMenu('arrange')}
         onClose={closeMenu}
-        menuBarHasOpenMenu={openMenu !== null}
       />
       <DropdownMenu
         label="Help"
@@ -537,7 +536,6 @@ export function EditorMenuBar(props: EditorMenuBarProps) {
         isOpen={openMenu === 'help'}
         onOpen={() => setOpenMenu('help')}
         onClose={closeMenu}
-        menuBarHasOpenMenu={openMenu !== null}
       />
     </div>
   );

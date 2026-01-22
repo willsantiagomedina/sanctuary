@@ -12,13 +12,11 @@ import {
   Clock,
   FolderOpen,
   Edit2,
-  Star,
   ChevronDown,
   BookOpen,
   Music,
   Sparkles,
   TrendingUp,
-  Zap,
 } from 'lucide-react';
 import { 
   Button, 
@@ -41,8 +39,8 @@ import {
   Badge,
   Skeleton,
 } from '@sanctuary/ui';
-import { useStore } from '../stores/app';
 import { useAuth } from '../contexts/AuthContext';
+import { PageHeader } from '../components/layout/PageHeader';
 
 interface Presentation {
   id: string;
@@ -72,32 +70,43 @@ function QuickActionCard({
   title, 
   description, 
   onClick,
-  gradient,
+  tone = 'primary',
 }: { 
   icon: any; 
   title: string; 
   description: string; 
   onClick: () => void;
-  gradient: string;
+  tone?: 'primary' | 'accent' | 'muted' | 'info';
 }) {
+  const toneStyles: Record<string, string> = {
+    primary: 'bg-primary/10 text-primary ring-primary/20',
+    accent: 'bg-accent/10 text-accent ring-accent/20',
+    muted: 'bg-muted text-foreground/70 ring-border/60',
+    info: 'bg-secondary text-foreground/70 ring-border/60',
+  };
+
   return (
     <button
       onClick={onClick}
       className={cn(
-        "relative overflow-hidden rounded-xl p-5 text-left transition-all duration-200",
-        "hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]",
-        "group border border-transparent",
-        gradient
+        "group relative rounded-xl border border-border/60 bg-card/70 p-4 text-left shadow-sm transition-colors",
+        "hover:border-border hover:bg-card"
       )}
     >
-      <div className="relative z-10">
-        <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
-          <Icon className="h-5 w-5 text-white" />
+      <div className="flex items-center gap-3">
+        <div
+          className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-lg ring-1 ring-inset",
+            toneStyles[tone]
+          )}
+        >
+          <Icon className="h-4 w-4" />
         </div>
-        <h3 className="font-semibold text-white mb-1">{title}</h3>
-        <p className="text-sm text-white/80">{description}</p>
+        <div>
+          <h3 className="text-sm font-semibold">{title}</h3>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
       </div>
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
     </button>
   );
 }
@@ -105,7 +114,6 @@ function QuickActionCard({
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { resolvedTheme } = useStore();
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -238,68 +246,62 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section with Welcome */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 border-b">
-        <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="animate-fade-in">
-              <h1 className="text-3xl font-bold mb-2">
-                {greeting}, {user?.name?.split(' ')[0] || 'there'} <span className="wave">👋</span>
-              </h1>
-              <p className="text-muted-foreground">
-                {presentations.length > 0 
-                  ? `You have ${presentations.length} presentation${presentations.length !== 1 ? 's' : ''} ready`
-                  : 'Create your first presentation to get started'
-                }
-              </p>
-            </div>
-            <Button 
-              size="lg" 
-              onClick={createNewPresentation}
-              className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              New Presentation
-            </Button>
-          </div>
+      <PageHeader
+        title={
+          <>
+            {greeting}, {user?.name?.split(' ')[0] || 'there'} <span>👋</span>
+          </>
+        }
+        description={
+          presentations.length > 0
+            ? `You have ${presentations.length} presentation${presentations.length !== 1 ? 's' : ''} ready`
+            : 'Create your first presentation to get started'
+        }
+        icon={<Sparkles className="h-5 w-5" />}
+        actions={
+          <Button size="lg" onClick={createNewPresentation} className="shadow-sm">
+            <Plus className="h-5 w-5" />
+            New Presentation
+          </Button>
+        }
+      />
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Quick Actions */}
+        <section className="mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <QuickActionCard
               icon={Plus}
               title="Blank Presentation"
               description="Start from scratch"
               onClick={createNewPresentation}
-              gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+              tone="primary"
             />
             <QuickActionCard
               icon={BookOpen}
               title="Bible Verse"
               description="Add scripture slides"
               onClick={() => navigate('/bible')}
-              gradient="bg-gradient-to-br from-purple-500 to-purple-600"
+              tone="accent"
             />
             <QuickActionCard
               icon={Music}
               title="Song Lyrics"
               description="Browse worship songs"
               onClick={() => navigate('/songs')}
-              gradient="bg-gradient-to-br from-pink-500 to-pink-600"
+              tone="muted"
             />
             <QuickActionCard
               icon={Sparkles}
               title="Templates"
               description="Coming soon"
               onClick={() => {}}
-              gradient="bg-gradient-to-br from-amber-500 to-orange-500"
+              tone="info"
             />
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Recent Section - Only show if there are presentations */}
         {recentPresentations.length > 0 && !searchQuery && (
           <section className="mb-10 animate-fade-in">

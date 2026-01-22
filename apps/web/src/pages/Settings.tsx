@@ -12,6 +12,7 @@ import {
   Bell,
   Shield,
   HelpCircle,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { 
   Button, 
@@ -36,6 +37,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useBibleDownload, useBibleTranslations } from '../hooks/useBible';
 import { getSeedTranslationMeta } from '../lib/bible-seed';
 import type { BibleTranslation } from '@sanctuary/shared';
+import { PageHeader } from '../components/layout/PageHeader';
 
 function BibleVersionRow({
   translation,
@@ -168,13 +170,12 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="border-b bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground mt-1">Customize your Sanctuary experience</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Customize your Sanctuary experience"
+        icon={<SettingsIcon className="h-5 w-5" />}
+        containerClassName="max-w-4xl"
+      />
 
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
         {/* Account Section */}

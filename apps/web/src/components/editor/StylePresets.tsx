@@ -138,7 +138,7 @@ export function StylePresetsDialog({ onApplyPreset, currentStyle }: StylePresets
                     >
                       <span
                         style={{
-                          fontFamily: preset.style.fontFamily || 'Inter',
+                          fontFamily: preset.style.fontFamily || 'Instrument Sans',
                           fontSize: `${Math.min(preset.style.fontSize || 24, 20)}px`,
                           fontWeight: preset.style.fontWeight || '400',
                           color: preset.style.color || '#ffffff',

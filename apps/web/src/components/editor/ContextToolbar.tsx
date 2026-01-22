@@ -125,7 +125,7 @@ export function ContextToolbar({
               <Button variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1">
                 <Type className="h-3.5 w-3.5" />
                 <span className="max-w-[80px] truncate">
-                  {element.style.fontFamily || 'Inter'}
+                  {element.style.fontFamily || 'Instrument Sans'}
                 </span>
               </Button>
             </PopoverTrigger>

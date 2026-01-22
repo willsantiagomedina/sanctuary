@@ -34,16 +34,25 @@ export const getBooks = query({
 export const getBooksByVersionCode = query({
   args: { versionCode: v.string() },
   handler: async (ctx, args) => {
-    const version = await ctx.db
+    const normalizedCode = args.versionCode.toLowerCase();
+    let version = await ctx.db
       .query("bibleVersions")
-      .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+      .withIndex("by_code", (q) => q.eq("code", normalizedCode))
       .first();
+    if (!version && normalizedCode !== args.versionCode) {
+      version = await ctx.db
+        .query("bibleVersions")
+        .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+        .first();
+    }
     if (!version) return [];
 
-    return await ctx.db
+    const books = await ctx.db
       .query("bibleBooks")
-      .withIndex("by_version_number", (q) => q.eq("versionId", version._id))
+      .withIndex("by_version", (q) => q.eq("versionId", version._id))
       .collect();
+
+    return books.sort((a, b) => a.bookNumber - b.bookNumber);
   },
 });
 
@@ -70,16 +79,28 @@ export const getChapterByReference = query({
     chapter: v.number(),
   },
   handler: async (ctx, args) => {
-    const version = await ctx.db
+    const normalizedCode = args.versionCode.toLowerCase();
+    let version = await ctx.db
       .query("bibleVersions")
-      .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+      .withIndex("by_code", (q) => q.eq("code", normalizedCode))
       .first();
+    if (!version && normalizedCode !== args.versionCode) {
+      version = await ctx.db
+        .query("bibleVersions")
+        .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+        .first();
+    }
     if (!version) return null;
 
     const bookRecord = await ctx.db
       .query("bibleBooks")
       .withIndex("by_version", (q) => q.eq("versionId", version._id))
-      .filter((q) => q.eq(q.field("name"), args.book))
+      .filter((q) =>
+        q.or(
+          q.eq(q.field("name"), args.book),
+          q.eq(q.field("shortName"), args.book)
+        )
+      )
       .first();
     if (!bookRecord) return null;
 
@@ -101,17 +122,29 @@ export const getVerse = query({
     verse: v.number(),
   },
   handler: async (ctx, args) => {
-    const version = await ctx.db
+    const normalizedCode = args.versionCode.toLowerCase();
+    let version = await ctx.db
       .query("bibleVersions")
-      .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+      .withIndex("by_code", (q) => q.eq("code", normalizedCode))
       .first();
+    if (!version && normalizedCode !== args.versionCode) {
+      version = await ctx.db
+        .query("bibleVersions")
+        .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+        .first();
+    }
     
     if (!version) return null;
 
     const bookRecord = await ctx.db
       .query("bibleBooks")
       .withIndex("by_version", (q) => q.eq("versionId", version._id))
-      .filter((q) => q.eq(q.field("name"), args.book))
+      .filter((q) =>
+        q.or(
+          q.eq(q.field("name"), args.book),
+          q.eq(q.field("shortName"), args.book)
+        )
+      )
       .first();
     
     if (!bookRecord) return null;
@@ -138,10 +171,17 @@ export const searchVerses = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const version = await ctx.db
+    const normalizedCode = args.versionCode.toLowerCase();
+    let version = await ctx.db
       .query("bibleVersions")
-      .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+      .withIndex("by_code", (q) => q.eq("code", normalizedCode))
       .first();
+    if (!version && normalizedCode !== args.versionCode) {
+      version = await ctx.db
+        .query("bibleVersions")
+        .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+        .first();
+    }
     
     if (!version) return [];
 

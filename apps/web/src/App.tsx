@@ -12,6 +12,7 @@ import { isClerkConfigured } from './lib/auth/client';
 import Dashboard from './pages/Dashboard';
 import PresentationEditor from './pages/PresentationEditor';
 import LivePresenter from './pages/LivePresenter';
+import PresenterView from './pages/PresenterView';
 import BibleExplorer from './pages/BibleExplorer';
 import SongLibrary from './pages/SongLibrary';
 import Settings from './pages/Settings';
@@ -125,6 +126,7 @@ function AppRoutes() {
 
         {/* Presentation mode (full screen, no layout) */}
         <Route path="/present/:id" element={<LivePresenter />} />
+        <Route path="/presenter/:id" element={<PresenterView />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

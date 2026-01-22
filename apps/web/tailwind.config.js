@@ -67,9 +67,9 @@ export default {
         ring: 'hsl(var(--ring))',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
-        japanese: ['Noto Sans JP', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Instrument Sans', 'Noto Sans JP', 'sans-serif'],
+        display: ['Newsreader', 'Noto Serif JP', 'serif'],
+        japanese: ['Noto Sans JP', 'sans-serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',

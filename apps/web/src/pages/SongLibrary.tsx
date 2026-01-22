@@ -7,9 +7,6 @@ import {
   ChevronRight,
   Globe,
   Tag,
-  Heart,
-  Play,
-  Clock,
   Users,
 } from 'lucide-react';
 import { 
@@ -29,7 +26,8 @@ import {
   CardContent,
   Badge,
 } from '@sanctuary/ui';
-import { ALL_SONGS, getSongsByLanguage, searchSongs, Song, SongSection } from '../data/songs';
+import { ALL_SONGS, getSongsByLanguage, Song, SongSection } from '../data/songs';
+import { PageHeader } from '../components/layout/PageHeader';
 
 export default function SongLibrary() {
   const navigate = useNavigate();
@@ -78,7 +76,7 @@ export default function SongLibrary() {
           height: 300,
           content: text,
           style: {
-            fontFamily: 'Inter',
+            fontFamily: 'Instrument Sans',
             fontSize: 36,
             fontWeight: '400',
             color: '#ffffff',
@@ -116,33 +114,23 @@ export default function SongLibrary() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="border-b bg-gradient-to-br from-pink-500/5 via-background to-purple-500/5">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-              <Music className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Song Library</h1>
-              <p className="text-muted-foreground">Browse and add worship songs to your presentations</p>
-            </div>
-          </div>
-          
-          {/* Search */}
-          <div className="relative mt-6 max-w-xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Search songs, artists, or tags..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 text-base"
-            />
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Song Library"
+        description="Browse and add worship songs to your presentations"
+        icon={<Music className="h-5 w-5" />}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Search */}
+        <div className="relative mb-6 max-w-xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input
+            placeholder="Search songs, artists, or tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 h-11 text-base"
+          />
+        </div>
         {/* Language tabs */}
         <Tabs value={selectedLanguage} onValueChange={(v) => setSelectedLanguage(v as any)}>
           <div className="flex items-center justify-between mb-6">
