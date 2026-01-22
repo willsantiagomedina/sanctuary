@@ -108,16 +108,16 @@ jobs:
       - name: List artifacts
         run: find releases -type f
 
+      - name: Install Wrangler
+        run: npm install -g wrangler@4.59.3
+
       - name: Upload to Cloudflare R2
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          packageManager: npm
-          wranglerVersion: "3.78.0"
-          command: |
-            r2 object put sanctuary-assets/releases/ --file releases/electron-mac/ --recursive || true
-            r2 object put sanctuary-assets/releases/ --file releases/electron-win/ --recursive || true
+        run: |
+          wrangler r2 object put sanctuary-assets/releases/ --file releases/electron-mac/ --recursive || true
+          wrangler r2 object put sanctuary-assets/releases/ --file releases/electron-win/ --recursive || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   create-release:
     name: Create GitHub Release
