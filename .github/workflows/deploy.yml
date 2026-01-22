@@ -93,4 +93,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           packageManager: npm
+          wranglerVersion: "3.78.0"
           command: pages deploy apps/web/dist --project-name=sanctuary --branch=${{ github.head_ref || github.ref_name }}

@@ -114,6 +114,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           packageManager: npm
+          wranglerVersion: "3.78.0"
           command: |
             r2 object put sanctuary-assets/releases/ --file releases/electron-mac/ --recursive || true
             r2 object put sanctuary-assets/releases/ --file releases/electron-win/ --recursive || true
