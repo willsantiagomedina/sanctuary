@@ -702,7 +702,7 @@ export default function PresentationEditor() {
         : [{ type: 'verse', label: 'Lyrics', lyrics: song.lyrics }];
     const background = { ...currentSlide.background };
     const baseId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    const newSlides = sections.map((part, index) => ({
+    const newSlides: Slide[] = sections.map((part, index) => ({
       id: `slide-${baseId}-${index}`,
       background: { ...background },
       elements: [
