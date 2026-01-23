@@ -49,6 +49,7 @@ interface Presentation {
   createdAt: number;
   updatedAt: number;
   thumbnail?: string;
+  title?: string;
 }
 
 // Skeleton loader for presentation cards
@@ -132,6 +133,9 @@ export default function Dashboard() {
     return 'Good evening';
   }, []);
 
+  const getPresentationName = (pres: Presentation) =>
+    pres.name?.trim() || pres.title?.trim() || 'Untitled presentation';
+
   // Load presentations from localStorage
   useEffect(() => {
     const loadPresentations = () => {
@@ -142,7 +146,34 @@ export default function Dashboard() {
         if (key?.startsWith('presentation-')) {
           try {
             const data = JSON.parse(localStorage.getItem(key) || '');
-            presToLoad.push(data);
+            if (!data || typeof data !== 'object') continue;
+            const id =
+              typeof data.id === 'string'
+                ? data.id
+                : key.replace('presentation-', '');
+            if (!id) continue;
+            const name =
+              typeof data.name === 'string'
+                ? data.name
+                : typeof data.title === 'string'
+                ? data.title
+                : 'Untitled presentation';
+            const createdAt = typeof data.createdAt === 'number' ? data.createdAt : Date.now();
+            const updatedAt = typeof data.updatedAt === 'number' ? data.updatedAt : createdAt;
+            const slides = Array.isArray(data.slides) ? data.slides : [];
+            const normalized: Presentation = {
+              ...data,
+              id,
+              name,
+              slides,
+              createdAt,
+              updatedAt,
+              thumbnail: data.thumbnail,
+            };
+            if (data.name !== name || data.id !== id || data.slides !== slides) {
+              localStorage.setItem(key, JSON.stringify(normalized));
+            }
+            presToLoad.push(normalized);
           } catch (e) {
             console.error('Failed to parse presentation:', key);
           }
@@ -160,13 +191,13 @@ export default function Dashboard() {
 
   // Filtered and sorted presentations
   const filteredPresentations = useMemo(() => {
-    let result = presentations.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    let result = presentations.filter(p =>
+      getPresentationName(p).toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     switch (sortBy) {
       case 'name':
-        result.sort((a, b) => a.name.localeCompare(b.name));
+        result.sort((a, b) => getPresentationName(a).localeCompare(getPresentationName(b)));
         break;
       case 'created':
         result.sort((a, b) => b.createdAt - a.createdAt);
@@ -217,7 +248,7 @@ export default function Dashboard() {
     const newPres = {
       ...JSON.parse(JSON.stringify(pres)),
       id: newId,
-      name: `${pres.name} (Copy)`,
+      name: `${getPresentationName(pres)} (Copy)`,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -337,7 +368,7 @@ export default function Dashboard() {
                       </div>
                       <CardContent className="p-4">
                         <h3 className="font-medium truncate group-hover:text-primary transition-colors">
-                          {pres.name}
+                          {getPresentationName(pres)}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                           <Clock className="h-3 w-3" />
@@ -490,7 +521,7 @@ export default function Dashboard() {
                       <div className="flex items-start justify-between gap-2">
                         <Link to={`/presentations/${pres.id}`} className="flex-1 min-w-0">
                           <h3 className="font-medium truncate group-hover:text-primary transition-colors">
-                            {pres.name}
+                            {getPresentationName(pres)}
                           </h3>
                         </Link>
                         <DropdownMenu>
@@ -507,7 +538,7 @@ export default function Dashboard() {
                             <DropdownMenuItem onClick={() => navigate(`/present/${pres.id}`)}>
                               <Play className="h-4 w-4 mr-2" /> Present
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setSelectedPresentation(pres); setNewName(pres.name); setRenameDialogOpen(true); }}>
+                            <DropdownMenuItem onClick={() => { setSelectedPresentation(pres); setNewName(getPresentationName(pres)); setRenameDialogOpen(true); }}>
                               <Edit2 className="h-4 w-4 mr-2" /> Rename
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDuplicate(pres)}>
@@ -557,7 +588,7 @@ export default function Dashboard() {
                             className="w-14 h-10 rounded-lg shrink-0 shadow-sm" 
                             style={getBackgroundStyle(pres)}
                           />
-                          <span className="font-medium truncate">{pres.name}</span>
+                          <span className="font-medium truncate">{getPresentationName(pres)}</span>
                         </Link>
                       </td>
                       <td className="p-4 text-muted-foreground hidden sm:table-cell">
@@ -584,7 +615,7 @@ export default function Dashboard() {
                             <DropdownMenuItem onClick={() => navigate(`/present/${pres.id}`)}>
                               <Play className="h-4 w-4 mr-2" /> Present
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setSelectedPresentation(pres); setNewName(pres.name); setRenameDialogOpen(true); }}>
+                            <DropdownMenuItem onClick={() => { setSelectedPresentation(pres); setNewName(getPresentationName(pres)); setRenameDialogOpen(true); }}>
                               <Edit2 className="h-4 w-4 mr-2" /> Rename
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDuplicate(pres)}>
@@ -615,7 +646,7 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle>Delete Presentation</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedPresentation?.name}"? This action cannot be undone.
+              Are you sure you want to delete "{selectedPresentation ? getPresentationName(selectedPresentation) : ''}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

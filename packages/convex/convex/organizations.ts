@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { requireOrgMember, requireOrgRole, requireUser } from './auth';
 
 // ============================================================================
 // ORGANIZATION QUERIES
@@ -8,23 +9,33 @@ import { mutation, query } from './_generated/server';
 export const get = query({
   args: { id: v.id('organizations') },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const org = await ctx.db.get(args.id);
+    if (!org) return null;
+    await requireOrgMember(ctx, org._id);
+    return org;
   },
 });
 
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const org = await ctx.db
       .query('organizations')
       .withIndex('by_slug', (q) => q.eq('slug', args.slug))
       .first();
+    if (!org) return null;
+    await requireOrgMember(ctx, org._id);
+    return org;
   },
 });
 
 export const listForUser = query({
   args: { userId: v.id('users') },
   handler: async (ctx, args) => {
+    const { user } = await requireUser(ctx);
+    if (args.userId !== user._id) {
+      throw new Error('Not authorized');
+    }
     const memberships = await ctx.db
       .query('organizationMembers')
       .withIndex('by_user', (q) => q.eq('userId', args.userId))
@@ -44,6 +55,7 @@ export const listForUser = query({
 export const getMembers = query({
   args: { organizationId: v.id('organizations') },
   handler: async (ctx, args) => {
+    await requireOrgRole(ctx, args.organizationId, ['owner', 'admin']);
     const memberships = await ctx.db
       .query('organizationMembers')
       .withIndex('by_organization', (q) => q.eq('organizationId', args.organizationId))
@@ -73,6 +85,10 @@ export const create = mutation({
     ownerId: v.id('users'),
   },
   handler: async (ctx, args) => {
+    const { user } = await requireUser(ctx);
+    if (args.ownerId !== user._id) {
+      throw new Error('Not authorized');
+    }
     const now = Date.now();
 
     // Check if slug is available
@@ -101,7 +117,7 @@ export const create = mutation({
     // Add owner as member
     await ctx.db.insert('organizationMembers', {
       organizationId: orgId,
-      userId: args.ownerId,
+      userId: user._id,
       role: 'owner',
       joinedAt: now,
     });
@@ -125,6 +141,7 @@ export const update = mutation({
     })),
   },
   handler: async (ctx, args) => {
+    await requireOrgRole(ctx, args.id, ['owner', 'admin']);
     const { id, ...updates } = args;
     
     const filteredUpdates = Object.fromEntries(
@@ -145,6 +162,7 @@ export const addMember = mutation({
     role: v.union(v.literal('admin'), v.literal('editor'), v.literal('viewer')),
   },
   handler: async (ctx, args) => {
+    await requireOrgRole(ctx, args.organizationId, ['owner', 'admin']);
     // Check if already a member
     const existing = await ctx.db
       .query('organizationMembers')
@@ -173,6 +191,7 @@ export const updateMemberRole = mutation({
     role: v.union(v.literal('admin'), v.literal('editor'), v.literal('viewer')),
   },
   handler: async (ctx, args) => {
+    await requireOrgRole(ctx, args.organizationId, ['owner', 'admin']);
     const membership = await ctx.db
       .query('organizationMembers')
       .withIndex('by_org_user', (q) =>
@@ -198,6 +217,7 @@ export const removeMember = mutation({
     userId: v.id('users'),
   },
   handler: async (ctx, args) => {
+    await requireOrgRole(ctx, args.organizationId, ['owner', 'admin']);
     const membership = await ctx.db
       .query('organizationMembers')
       .withIndex('by_org_user', (q) =>

@@ -182,6 +182,7 @@ export default function PresenterView() {
     updatedAt: 0,
   });
   const rotationStateRef = useRef(rotationState);
+  const rotationDirectionRef = useRef<1 | -1>(1);
   const [selectedRotationGroupId, setSelectedRotationGroupId] = useState<string | null>(null);
 
   const controlKey = id ? `presentation-control-${id}` : null;
@@ -294,6 +295,13 @@ export default function PresenterView() {
     return rotationGroups.find(group => group.id === rotationState.groupId) || null;
   }, [rotationGroups, rotationState.groupId]);
 
+  const activeRotationIndices = useMemo(() => {
+    if (!activeRotationGroup) return [];
+    return activeRotationGroup.slideIds
+      .map(id => slideIndexById.get(id))
+      .filter((index): index is number => typeof index === 'number');
+  }, [activeRotationGroup, slideIndexById]);
+
   const selectedRotationIndices = useMemo(() => {
     if (!selectedRotationGroup) return [];
     return selectedRotationGroup.slideIds
@@ -346,6 +354,63 @@ export default function PresenterView() {
     if (activeRotationGroup && !activeRotationGroup.stopOnInteraction) return;
     stopRotation();
   }, [activeRotationGroup, stopRotation]);
+
+  const getNextRotationIndex = useCallback((current: number) => {
+    if (!activeRotationGroup || activeRotationIndices.length === 0) return null;
+    const currentPos = activeRotationIndices.indexOf(current);
+    if (currentPos === -1) return activeRotationIndices[0];
+
+    if (activeRotationGroup.mode === 'ping-pong') {
+      let nextPos = currentPos + rotationDirectionRef.current;
+      if (nextPos >= activeRotationIndices.length || nextPos < 0) {
+        if (!activeRotationGroup.loop) return null;
+        rotationDirectionRef.current = rotationDirectionRef.current === 1 ? -1 : 1;
+        nextPos = currentPos + rotationDirectionRef.current;
+      }
+      return activeRotationIndices[Math.max(0, Math.min(nextPos, activeRotationIndices.length - 1))];
+    }
+
+    const nextPos = currentPos + 1;
+    if (nextPos >= activeRotationIndices.length) {
+      if (!activeRotationGroup.loop) return null;
+      return activeRotationIndices[0];
+    }
+    return activeRotationIndices[nextPos];
+  }, [activeRotationGroup, activeRotationIndices]);
+
+  useEffect(() => {
+    if (!rotationState.active) return;
+    if (!activeRotationGroup || activeRotationIndices.length === 0) {
+      stopRotation();
+    }
+  }, [rotationState.active, activeRotationGroup, activeRotationIndices.length, stopRotation]);
+
+  useEffect(() => {
+    if (!rotationState.active || !activeRotationGroup) return;
+    rotationDirectionRef.current = 1;
+  }, [rotationState.active, activeRotationGroup?.id]);
+
+  useEffect(() => {
+    if (!rotationState.active || !activeRotationGroup || activeRotationIndices.length === 0) return;
+    if (!activeRotationIndices.includes(currentIndex)) {
+      setCurrentIndex(activeRotationIndices[0]);
+    }
+  }, [rotationState.active, activeRotationGroup, activeRotationIndices, currentIndex]);
+
+  useEffect(() => {
+    if (!rotationState.active || !activeRotationGroup || activeRotationIndices.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => {
+        const nextIndex = getNextRotationIndex(prev);
+        if (nextIndex === null) {
+          stopRotation();
+          return prev;
+        }
+        return nextIndex;
+      });
+    }, activeRotationGroup.intervalSeconds * 1000);
+    return () => clearInterval(interval);
+  }, [rotationState.active, activeRotationGroup, activeRotationIndices, getNextRotationIndex, stopRotation]);
 
   const goNext = useCallback(() => {
     if (!presentation) return;
@@ -408,7 +473,7 @@ export default function PresenterView() {
   const nextSlide = presentation.slides[currentIndex + 1] || null;
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <header className="h-12 border-b bg-card/80 backdrop-blur flex items-center px-3 gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(`/presentations/${id}`)}>
           <ChevronLeft className="h-4 w-4" />
@@ -425,8 +490,8 @@ export default function PresenterView() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-hidden p-6">
-        <div className="h-full grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6">
+      <div className="flex-1 overflow-auto p-6">
+        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6 items-start">
           <div className="flex flex-col gap-4">
             <SlidePreview slide={currentSlide} className="shadow-xl" />
             <div className="flex items-center justify-between">

@@ -2,6 +2,8 @@ import { createContext, useContext, ReactNode, useEffect, useState } from 'react
 import { useUser, useClerk, SignedIn, SignedOut } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 import { isClerkConfigured } from '../lib/auth/client';
+import { api } from '../../convex/_generated/api.js';
+import { convexClient } from '../lib/convex/client';
 
 // Types
 interface User {
@@ -46,6 +48,24 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timeout);
   }, [isLoaded]);
 
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    const email = user.primaryEmailAddress?.emailAddress;
+    if (!email) {
+      console.error('Clerk user is missing a primary email address.');
+      return;
+    }
+    const name = user.fullName || user.firstName || email;
+    void convexClient.mutation(api.users.createOrGet, {
+      email,
+      name,
+      authId: user.id,
+      preferredLanguage: 'en',
+    }).catch((error) => {
+      console.error('Failed to sync user record:', error);
+    });
+  }, [isSignedIn, user]);
+
   const logout = () => {
     signOut();
     toast.success('Signed out');
@@ -77,28 +97,17 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Fallback provider when Clerk is not configured (demo mode)
-function DemoAuthProvider({ children }: { children: ReactNode }) {
-  // Demo mode - always authenticated with a fake user
-  const demoUser: User = {
-    _id: 'demo-user',
-    email: 'demo@sanctuary.app',
-    name: 'Demo User',
-  };
-
+function MissingClerkConfig() {
   return (
-    <AuthContext.Provider
-      value={{
-        user: demoUser,
-        isAuthenticated: true,
-        isLoading: false,
-        currentOrganization: null,
-        userOrganizations: [],
-        logout: () => toast.success('Demo mode - refresh to reset'),
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="max-w-lg text-center space-y-4">
+        <h1 className="text-2xl font-semibold">Authentication is not configured</h1>
+        <p className="text-sm text-muted-foreground">
+          Set `VITE_CLERK_PUBLISHABLE_KEY` in the web environment and
+          `CLERK_JWT_ISSUER_DOMAIN` in Convex to enable secure sign in.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -106,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (isClerkConfigured) {
     return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
   }
-  return <DemoAuthProvider>{children}</DemoAuthProvider>;
+  return <MissingClerkConfig />;
 }
 
 export function useAuth() {

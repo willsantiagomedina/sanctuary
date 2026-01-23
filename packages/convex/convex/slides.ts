@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { requirePresentationAccess, requirePresentationRole, requireSlideRole } from './auth';
 
 // ============================================================================
 // SLIDE QUERIES
@@ -8,13 +9,20 @@ import { mutation, query } from './_generated/server';
 export const get = query({
   args: { id: v.id('slides') },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const { slide } = await requireSlideRole(ctx, args.id, [
+      'owner',
+      'admin',
+      'editor',
+      'viewer',
+    ]);
+    return slide;
   },
 });
 
 export const listByPresentation = query({
   args: { presentationId: v.id('presentations') },
   handler: async (ctx, args) => {
+    await requirePresentationAccess(ctx, args.presentationId);
     return await ctx.db
       .query('slides')
       .withIndex('by_presentation', (q) => q.eq('presentationId', args.presentationId))
@@ -76,6 +84,11 @@ export const create = mutation({
     insertAfter: v.optional(v.id('slides')),
   },
   handler: async (ctx, args) => {
+    const { presentation } = await requirePresentationRole(ctx, args.presentationId, [
+      'owner',
+      'admin',
+      'editor',
+    ]);
     const now = Date.now();
     
     const slideId = await ctx.db.insert('slides', {
@@ -96,26 +109,23 @@ export const create = mutation({
     });
 
     // Update presentation slide order
-    const presentation = await ctx.db.get(args.presentationId);
-    if (presentation) {
-      let newOrder: typeof presentation.slideOrder;
-      
-      if (args.insertAfter) {
-        const insertIndex = presentation.slideOrder.indexOf(args.insertAfter);
-        newOrder = [
-          ...presentation.slideOrder.slice(0, insertIndex + 1),
-          slideId,
-          ...presentation.slideOrder.slice(insertIndex + 1),
-        ];
-      } else {
-        newOrder = [...presentation.slideOrder, slideId];
-      }
-
-      await ctx.db.patch(args.presentationId, {
-        slideOrder: newOrder,
-        updatedAt: now,
-      });
+    let newOrder: typeof presentation.slideOrder;
+    
+    if (args.insertAfter) {
+      const insertIndex = presentation.slideOrder.indexOf(args.insertAfter);
+      newOrder = [
+        ...presentation.slideOrder.slice(0, insertIndex + 1),
+        slideId,
+        ...presentation.slideOrder.slice(insertIndex + 1),
+      ];
+    } else {
+      newOrder = [...presentation.slideOrder, slideId];
     }
+
+    await ctx.db.patch(args.presentationId, {
+      slideOrder: newOrder,
+      updatedAt: now,
+    });
 
     return slideId;
   },
@@ -131,6 +141,7 @@ export const update = mutation({
     duration: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireSlideRole(ctx, args.id, ['owner', 'admin', 'editor']);
     const { id, ...updates } = args;
     
     // Filter out undefined values
@@ -148,8 +159,11 @@ export const update = mutation({
 export const duplicate = mutation({
   args: { id: v.id('slides') },
   handler: async (ctx, args) => {
-    const slide = await ctx.db.get(args.id);
-    if (!slide) throw new Error('Slide not found');
+    const { slide, presentation } = await requireSlideRole(ctx, args.id, [
+      'owner',
+      'admin',
+      'editor',
+    ]);
 
     const now = Date.now();
     const { _id, _creationTime, ...slideData } = slide;
@@ -160,20 +174,17 @@ export const duplicate = mutation({
     });
 
     // Update presentation slide order
-    const presentation = await ctx.db.get(slide.presentationId);
-    if (presentation) {
-      const insertIndex = presentation.slideOrder.indexOf(args.id);
-      const newOrder = [
-        ...presentation.slideOrder.slice(0, insertIndex + 1),
-        newSlideId,
-        ...presentation.slideOrder.slice(insertIndex + 1),
-      ];
-      
-      await ctx.db.patch(slide.presentationId, {
-        slideOrder: newOrder,
-        updatedAt: now,
-      });
-    }
+    const insertIndex = presentation.slideOrder.indexOf(args.id);
+    const newOrder = [
+      ...presentation.slideOrder.slice(0, insertIndex + 1),
+      newSlideId,
+      ...presentation.slideOrder.slice(insertIndex + 1),
+    ];
+    
+    await ctx.db.patch(slide.presentationId, {
+      slideOrder: newOrder,
+      updatedAt: now,
+    });
 
     return newSlideId;
   },
@@ -182,17 +193,17 @@ export const duplicate = mutation({
 export const remove = mutation({
   args: { id: v.id('slides') },
   handler: async (ctx, args) => {
-    const slide = await ctx.db.get(args.id);
-    if (!slide) return;
+    const { slide, presentation } = await requireSlideRole(ctx, args.id, [
+      'owner',
+      'admin',
+      'editor',
+    ]);
 
     // Remove from presentation slide order
-    const presentation = await ctx.db.get(slide.presentationId);
-    if (presentation) {
-      await ctx.db.patch(slide.presentationId, {
-        slideOrder: presentation.slideOrder.filter((id) => id !== args.id),
-        updatedAt: Date.now(),
-      });
-    }
+    await ctx.db.patch(slide.presentationId, {
+      slideOrder: presentation.slideOrder.filter((id) => id !== args.id),
+      updatedAt: Date.now(),
+    });
 
     await ctx.db.delete(args.id);
   },

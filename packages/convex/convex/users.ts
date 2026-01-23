@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { requireIdentity, requireUser } from './auth';
 
 export const createOrGet = mutation({
   args: {
@@ -9,24 +10,60 @@ export const createOrGet = mutation({
     preferredLanguage: v.union(v.literal('en'), v.literal('ja'), v.literal('es')),
   },
   handler: async (ctx, args) => {
-    // Check if user exists
-    const existing = await ctx.db
+    const identity = await requireIdentity(ctx);
+    if (args.authId !== identity.subject) {
+      throw new Error('Not authorized');
+    }
+    if (identity.email && identity.email !== args.email) {
+      throw new Error('Not authorized');
+    }
+
+    const now = Date.now();
+
+    let existing = await ctx.db
       .query('users')
-      .withIndex('by_email', (q) => q.eq('email', args.email))
+      .withIndex('by_auth_id', (q) => q.eq('authId', identity.subject))
       .first();
 
+    if (!existing && args.email) {
+      existing = await ctx.db
+        .query('users')
+        .withIndex('by_email', (q) => q.eq('email', args.email))
+        .first();
+    }
+
     if (existing) {
-      // Update last active
-      await ctx.db.patch(existing._id, { lastActiveAt: Date.now() });
+      const updates: {
+        email?: string;
+        name?: string;
+        authId?: string;
+        lastActiveAt: number;
+      } = { lastActiveAt: now };
+      const nextEmail = identity.email ?? args.email;
+      if (nextEmail && existing.email !== nextEmail) {
+        updates.email = nextEmail;
+      }
+      const nextName = identity.name ?? args.name;
+      if (nextName && existing.name !== nextName) {
+        updates.name = nextName;
+      }
+      if (existing.authId !== identity.subject) {
+        updates.authId = identity.subject;
+      }
+      await ctx.db.patch(existing._id, updates);
       return existing._id;
     }
 
     // Create new user
-    const now = Date.now();
+    const email = identity.email ?? args.email;
+    if (!email) {
+      throw new Error('Email is required');
+    }
+    const name = identity.name ?? args.name;
     const userId = await ctx.db.insert('users', {
-      email: args.email,
-      name: args.name,
-      authId: args.authId,
+      email,
+      name,
+      authId: identity.subject,
       preferredLanguage: args.preferredLanguage,
       createdAt: now,
       lastActiveAt: now,
@@ -49,6 +86,10 @@ export const createOrGet = mutation({
 export const getByEmail = query({
   args: { email: v.string() },
   handler: async (ctx, args) => {
+    const identity = await requireIdentity(ctx);
+    if (!identity.email || identity.email !== args.email) {
+      throw new Error('Not authorized');
+    }
     return await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', args.email))
@@ -59,6 +100,10 @@ export const getByEmail = query({
 export const get = query({
   args: { id: v.id('users') },
   handler: async (ctx, args) => {
+    const { user } = await requireUser(ctx);
+    if (args.id !== user._id) {
+      throw new Error('Not authorized');
+    }
     return await ctx.db.get(args.id);
   },
 });
@@ -71,6 +116,10 @@ export const update = mutation({
     preferredLanguage: v.optional(v.union(v.literal('en'), v.literal('ja'), v.literal('es'))),
   },
   handler: async (ctx, args) => {
+    const { user } = await requireUser(ctx);
+    if (args.id !== user._id) {
+      throw new Error('Not authorized');
+    }
     const { id, ...updates } = args;
     const filtered = Object.fromEntries(
       Object.entries(updates).filter(([_, v]) => v !== undefined)
@@ -82,6 +131,10 @@ export const update = mutation({
 export const getPreferences = query({
   args: { userId: v.id('users') },
   handler: async (ctx, args) => {
+    const { user } = await requireUser(ctx);
+    if (args.userId !== user._id) {
+      throw new Error('Not authorized');
+    }
     return await ctx.db
       .query('userPreferences')
       .withIndex('by_user', (q) => q.eq('userId', args.userId))
@@ -98,6 +151,10 @@ export const updatePreferences = mutation({
     fontFamily: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const { user } = await requireUser(ctx);
+    if (args.userId !== user._id) {
+      throw new Error('Not authorized');
+    }
     const { userId, ...updates } = args;
     const existing = await ctx.db
       .query('userPreferences')

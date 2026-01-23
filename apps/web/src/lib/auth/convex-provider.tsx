@@ -12,11 +12,11 @@ interface ConvexProviderWithAuthProps {
 
 /**
  * Wraps ConvexProvider with Clerk authentication.
- * Falls back to regular ConvexProvider if Clerk is not configured.
+ * Falls back to ConvexProvider only to surface configuration errors.
  */
 export function ConvexProviderWithAuth({ client, children }: ConvexProviderWithAuthProps) {
   if (!isClerkConfigured) {
-    // No auth configured - use regular ConvexProvider
+    console.error('Missing VITE_CLERK_PUBLISHABLE_KEY; Clerk auth is disabled.');
     return <ConvexProvider client={client}>{children}</ConvexProvider>;
   }
 

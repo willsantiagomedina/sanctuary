@@ -1,10 +1,12 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireIdentity } from "./auth";
 
 // Get all Bible versions
 export const getVersions = query({
   args: {},
   handler: async (ctx) => {
+    await requireIdentity(ctx);
     return await ctx.db.query("bibleVersions").collect();
   },
 });
@@ -13,6 +15,7 @@ export const getVersions = query({
 export const getVersionsByLanguage = query({
   args: { language: v.string() },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     return await ctx.db
       .query("bibleVersions")
       .withIndex("by_language", (q) => q.eq("language", args.language))
@@ -24,6 +27,7 @@ export const getVersionsByLanguage = query({
 export const getBooks = query({
   args: { versionId: v.id("bibleVersions") },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     return await ctx.db
       .query("bibleBooks")
       .withIndex("by_version", (q) => q.eq("versionId", args.versionId))
@@ -34,6 +38,7 @@ export const getBooks = query({
 export const getBooksByVersionCode = query({
   args: { versionCode: v.string() },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     const normalizedCode = args.versionCode.toLowerCase();
     let version = await ctx.db
       .query("bibleVersions")
@@ -63,6 +68,7 @@ export const getChapter = query({
     chapter: v.number(),
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     return await ctx.db
       .query("bibleChapters")
       .withIndex("by_book_chapter", (q) => 
@@ -79,6 +85,7 @@ export const getChapterByReference = query({
     chapter: v.number(),
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     const normalizedCode = args.versionCode.toLowerCase();
     let version = await ctx.db
       .query("bibleVersions")
@@ -122,6 +129,7 @@ export const getVerse = query({
     verse: v.number(),
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     const normalizedCode = args.versionCode.toLowerCase();
     let version = await ctx.db
       .query("bibleVersions")
@@ -171,6 +179,7 @@ export const searchVerses = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     const normalizedCode = args.versionCode.toLowerCase();
     let version = await ctx.db
       .query("bibleVersions")

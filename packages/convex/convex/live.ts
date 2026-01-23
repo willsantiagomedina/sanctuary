@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { requireOrgMember, requirePresentationAccess, requirePresentationRole } from './auth';
 
 // ============================================================================
 // LIVE SESSION QUERIES
@@ -8,6 +9,7 @@ import { mutation, query } from './_generated/server';
 export const getActiveSession = query({
   args: { presentationId: v.id('presentations') },
   handler: async (ctx, args) => {
+    await requirePresentationAccess(ctx, args.presentationId);
     return await ctx.db
       .query('liveSessions')
       .withIndex('by_presentation', (q) => q.eq('presentationId', args.presentationId))
@@ -19,6 +21,7 @@ export const getActiveSession = query({
 export const listActiveSessions = query({
   args: { organizationId: v.id('organizations') },
   handler: async (ctx, args) => {
+    await requireOrgMember(ctx, args.organizationId);
     return await ctx.db
       .query('liveSessions')
       .withIndex('by_organization_live', (q) =>
@@ -38,6 +41,14 @@ export const startSession = mutation({
     userId: v.id('users'),
   },
   handler: async (ctx, args) => {
+    const { user } = await requirePresentationRole(ctx, args.presentationId, [
+      'owner',
+      'admin',
+      'editor',
+    ]);
+    if (args.userId !== user._id) {
+      throw new Error('Not authorized');
+    }
     // Check if session already exists
     const existing = await ctx.db
       .query('liveSessions')
@@ -52,7 +63,7 @@ export const startSession = mutation({
       await ctx.db.patch(existing._id, {
         isLive: true,
         startedAt: Date.now(),
-        startedBy: args.userId,
+        startedBy: user._id,
         currentSlideIndex: 0,
         viewerIds: [],
       });
@@ -66,7 +77,7 @@ export const startSession = mutation({
       currentSlideIndex: 0,
       isLive: true,
       startedAt: Date.now(),
-      startedBy: args.userId,
+      startedBy: user._id,
       viewerIds: [],
     });
   },
@@ -75,6 +86,7 @@ export const startSession = mutation({
 export const stopSession = mutation({
   args: { presentationId: v.id('presentations') },
   handler: async (ctx, args) => {
+    await requirePresentationRole(ctx, args.presentationId, ['owner', 'admin', 'editor']);
     const session = await ctx.db
       .query('liveSessions')
       .withIndex('by_presentation', (q) => q.eq('presentationId', args.presentationId))
@@ -95,6 +107,7 @@ export const goToSlide = mutation({
     slideIndex: v.number(),
   },
   handler: async (ctx, args) => {
+    await requirePresentationRole(ctx, args.presentationId, ['owner', 'admin', 'editor']);
     const session = await ctx.db
       .query('liveSessions')
       .withIndex('by_presentation', (q) => q.eq('presentationId', args.presentationId))
@@ -111,6 +124,7 @@ export const goToSlide = mutation({
 export const nextSlide = mutation({
   args: { presentationId: v.id('presentations') },
   handler: async (ctx, args) => {
+    await requirePresentationRole(ctx, args.presentationId, ['owner', 'admin', 'editor']);
     const session = await ctx.db
       .query('liveSessions')
       .withIndex('by_presentation', (q) => q.eq('presentationId', args.presentationId))
@@ -133,6 +147,7 @@ export const nextSlide = mutation({
 export const prevSlide = mutation({
   args: { presentationId: v.id('presentations') },
   handler: async (ctx, args) => {
+    await requirePresentationRole(ctx, args.presentationId, ['owner', 'admin', 'editor']);
     const session = await ctx.db
       .query('liveSessions')
       .withIndex('by_presentation', (q) => q.eq('presentationId', args.presentationId))
@@ -152,14 +167,18 @@ export const joinSession = mutation({
     userId: v.id('users'),
   },
   handler: async (ctx, args) => {
+    const { user } = await requirePresentationAccess(ctx, args.presentationId);
+    if (args.userId !== user._id) {
+      throw new Error('Not authorized');
+    }
     const session = await ctx.db
       .query('liveSessions')
       .withIndex('by_presentation', (q) => q.eq('presentationId', args.presentationId))
       .first();
 
-    if (session && session.isLive && !session.viewerIds.includes(args.userId)) {
+    if (session && session.isLive && !session.viewerIds.includes(user._id)) {
       await ctx.db.patch(session._id, {
-        viewerIds: [...session.viewerIds, args.userId],
+        viewerIds: [...session.viewerIds, user._id],
       });
     }
   },
@@ -171,6 +190,10 @@ export const leaveSession = mutation({
     userId: v.id('users'),
   },
   handler: async (ctx, args) => {
+    const { user } = await requirePresentationAccess(ctx, args.presentationId);
+    if (args.userId !== user._id) {
+      throw new Error('Not authorized');
+    }
     const session = await ctx.db
       .query('liveSessions')
       .withIndex('by_presentation', (q) => q.eq('presentationId', args.presentationId))
@@ -178,7 +201,7 @@ export const leaveSession = mutation({
 
     if (session) {
       await ctx.db.patch(session._id, {
-        viewerIds: session.viewerIds.filter((id) => id !== args.userId),
+        viewerIds: session.viewerIds.filter((id) => id !== user._id),
       });
     }
   },
@@ -191,6 +214,7 @@ export const leaveSession = mutation({
 export const getPresence = query({
   args: { presentationId: v.id('presentations') },
   handler: async (ctx, args) => {
+    await requirePresentationAccess(ctx, args.presentationId);
     const records = await ctx.db
       .query('presence')
       .withIndex('by_presentation', (q) => q.eq('presentationId', args.presentationId))
@@ -211,6 +235,10 @@ export const updatePresence = mutation({
     selection: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
+    const { user } = await requirePresentationAccess(ctx, args.presentationId);
+    if (args.userId !== user._id) {
+      throw new Error('Not authorized');
+    }
     const existing = await ctx.db
       .query('presence')
       .withIndex('by_user', (q) => q.eq('userId', args.userId))
@@ -219,7 +247,7 @@ export const updatePresence = mutation({
 
     const data = {
       presentationId: args.presentationId,
-      userId: args.userId,
+      userId: user._id,
       slideId: args.slideId,
       cursor: args.cursor,
       selection: args.selection,
@@ -240,6 +268,10 @@ export const removePresence = mutation({
     userId: v.id('users'),
   },
   handler: async (ctx, args) => {
+    const { user } = await requirePresentationAccess(ctx, args.presentationId);
+    if (args.userId !== user._id) {
+      throw new Error('Not authorized');
+    }
     const existing = await ctx.db
       .query('presence')
       .withIndex('by_user', (q) => q.eq('userId', args.userId))

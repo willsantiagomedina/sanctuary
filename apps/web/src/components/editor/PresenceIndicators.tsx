@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { cn } from '@sanctuary/ui';
 import { useEditorStore, UserPresence } from '../../stores/editor';
+import { useAuth } from '../../contexts/AuthContext';
 
 // User avatar colors (consistent per user)
 const PRESENCE_COLORS = [
@@ -234,22 +235,22 @@ export function SlidePresenceIndicator({ slideIndex }: SlidePresenceIndicatorPro
 // Hook for presence synchronization (would connect to Convex)
 export function usePresenceSync() {
   const { setLocalUser, setCollaborators, updateLocalCursor, localUser } = useEditorStore();
+  const { user, isAuthenticated } = useAuth();
   
   // Initialize local user
   useEffect(() => {
-    // In real app, this would come from auth
-    const userId = localStorage.getItem('sanctuary-user-id') || `user-${Date.now()}`;
-    const userName = localStorage.getItem('sanctuary-user-name') || 'Anonymous';
-    
-    localStorage.setItem('sanctuary-user-id', userId);
-    
+    if (!isAuthenticated || !user) {
+      setLocalUser(null);
+      return;
+    }
+    const name = user.name || user.email;
     setLocalUser({
-      id: userId,
-      name: userName,
-      color: getUserColor(userId),
+      id: user._id,
+      name: name || 'User',
+      color: getUserColor(user._id),
       lastActive: Date.now(),
     });
-  }, [setLocalUser]);
+  }, [isAuthenticated, setLocalUser, user]);
   
   // Track cursor position
   useEffect(() => {
@@ -263,23 +264,8 @@ export function usePresenceSync() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [updateLocalCursor]);
   
-  // Simulate collaborators for demo (in real app, would come from Convex)
   useEffect(() => {
-    // Demo collaborators
-    const demoCollaborators: UserPresence[] = [
-      // Commented out for single-user mode
-      // {
-      //   id: 'demo-1',
-      //   name: 'Sarah Chen',
-      //   color: getUserColor('demo-1'),
-      //   cursorX: 300,
-      //   cursorY: 200,
-      //   currentSlideIndex: 0,
-      //   lastActive: Date.now(),
-      // },
-    ];
-    
-    setCollaborators(demoCollaborators);
+    setCollaborators([]);
   }, [setCollaborators]);
   
   return { localUser };

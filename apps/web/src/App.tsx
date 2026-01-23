@@ -6,7 +6,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useStore } from './stores/app';
 import { GlobalSearchDialog, KeyboardShortcutsDialog, StylePresetsDialog, SlideVariantsDialog } from './components/editor';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { isClerkConfigured } from './lib/auth/client';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -60,19 +59,10 @@ function ProtectedRoute() {
     );
   }
 
-  if (isClerkConfigured) {
-    // Use Navigate instead of RedirectToSignIn for better Electron compatibility
-    if (!isAuthenticated) {
-      return <Navigate to="/auth" replace />;
-    }
-    return (
-      <MainLayout>
-        <Outlet />
-      </MainLayout>
-    );
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
   }
 
-  // Demo mode - always allow access
   return (
     <MainLayout>
       <Outlet />
@@ -92,8 +82,7 @@ function PublicRoute() {
     );
   }
 
-  // In demo mode without Clerk, redirect to app
-  if (!isClerkConfigured) {
+  if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 

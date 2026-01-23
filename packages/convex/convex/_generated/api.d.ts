@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as bible from "../bible.js";
 import type * as bibleImport from "../bibleImport.js";
 import type * as live from "../live.js";
@@ -25,6 +26,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   bible: typeof bible;
   bibleImport: typeof bibleImport;
   live: typeof live;

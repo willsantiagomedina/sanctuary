@@ -1,14 +1,22 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireOrgMember, requireOrgRole, requireUser } from "./auth";
 
 // Get songs by language
 export const getSongsByLanguage = query({
   args: { language: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const { user } = await requireUser(ctx);
+    const memberships = await ctx.db
+      .query("organizationMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const orgIds = new Set(memberships.map((m) => m.organizationId));
+    const songs = await ctx.db
       .query("songs")
       .withIndex("by_language", (q) => q.eq("language", args.language))
       .collect();
+    return songs.filter((song) => !song.organizationId || orgIds.has(song.organizationId));
   },
 });
 
@@ -19,19 +27,27 @@ export const searchSongs = query({
     language: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const { user } = await requireUser(ctx);
+    const memberships = await ctx.db
+      .query("organizationMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const orgIds = new Set(memberships.map((m) => m.organizationId));
     if (args.language) {
       const language = args.language;
-      return await ctx.db
+      const songs = await ctx.db
         .query("songs")
         .withSearchIndex("search_title", (q) =>
           q.search("title", args.query).eq("language", language)
         )
         .take(50);
+      return songs.filter((song) => !song.organizationId || orgIds.has(song.organizationId));
     }
-    return await ctx.db
+    const songs = await ctx.db
       .query("songs")
       .withSearchIndex("search_title", (q) => q.search("title", args.query))
       .take(50);
+    return songs.filter((song) => !song.organizationId || orgIds.has(song.organizationId));
   },
 });
 
@@ -39,7 +55,14 @@ export const searchSongs = query({
 export const getSong = query({
   args: { id: v.id("songs") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const song = await ctx.db.get(args.id);
+    if (!song) return null;
+    if (song.organizationId) {
+      await requireOrgMember(ctx, song.organizationId);
+    } else {
+      await requireUser(ctx);
+    }
+    return song;
   },
 });
 
@@ -49,10 +72,17 @@ export const getAllSongs = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const { user } = await requireUser(ctx);
+    const memberships = await ctx.db
+      .query("organizationMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const orgIds = new Set(memberships.map((m) => m.organizationId));
+    const songs = await ctx.db
       .query("songs")
       .order("desc")
       .take(args.limit || 100);
+    return songs.filter((song) => !song.organizationId || orgIds.has(song.organizationId));
   },
 });
 
@@ -76,6 +106,10 @@ export const addSong = mutation({
     organizationId: v.optional(v.id("organizations")),
   },
   handler: async (ctx, args) => {
+    await requireUser(ctx);
+    if (args.organizationId) {
+      await requireOrgRole(ctx, args.organizationId, ["owner", "admin", "editor"]);
+    }
     return await ctx.db.insert("songs", {
       ...args,
       createdAt: Date.now(),

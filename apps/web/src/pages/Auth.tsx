@@ -1,12 +1,10 @@
 import { SignIn, SignUp } from '@clerk/clerk-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { useStore } from '../stores/app';
-import { isClerkConfigured } from '../lib/auth/client';
 
 export default function Auth() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { resolvedTheme } = useStore();
   
   const isSignup = location.pathname === '/auth/signup';
@@ -14,29 +12,6 @@ export default function Auth() {
   const logoSrc = resolvedTheme === 'dark' 
     ? '/sanctuary-icon-dark.png' 
     : '/sanctuary-icon-light.png';
-
-  // If Clerk is not configured, show demo mode message
-  if (!isClerkConfigured) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center max-w-md p-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">Demo Mode</h1>
-          <p className="text-muted-foreground mb-6">
-            Authentication is not configured. Running in demo mode with automatic login.
-          </p>
-          <button 
-            onClick={() => navigate('/')}
-            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Continue to App
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-primary/5 via-background to-accent/5">

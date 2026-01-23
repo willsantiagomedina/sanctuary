@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { requireOrgMember, requireOrgRole, requirePresentationRole } from './auth';
 
 // ============================================================================
 // PRESENTATION QUERIES
@@ -11,6 +12,7 @@ export const list = query({
     includeArchived: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    await requireOrgMember(ctx, args.organizationId);
     const presentations = await ctx.db
       .query('presentations')
       .withIndex('by_org_archived', (q) => 
@@ -27,7 +29,10 @@ export const list = query({
 export const get = query({
   args: { id: v.id('presentations') },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const presentation = await ctx.db.get(args.id);
+    if (!presentation) return null;
+    await requireOrgMember(ctx, presentation.organizationId);
+    return presentation;
   },
 });
 
@@ -36,6 +41,7 @@ export const getWithSlides = query({
   handler: async (ctx, args) => {
     const presentation = await ctx.db.get(args.id);
     if (!presentation) return null;
+    await requireOrgMember(ctx, presentation.organizationId);
 
     const slides = await Promise.all(
       presentation.slideOrder.map((slideId) => ctx.db.get(slideId))
@@ -54,6 +60,7 @@ export const search = query({
     query: v.string(),
   },
   handler: async (ctx, args) => {
+    await requireOrgMember(ctx, args.organizationId);
     return await ctx.db
       .query('presentations')
       .withSearchIndex('search_title', (q) =>
@@ -75,13 +82,21 @@ export const create = mutation({
     createdBy: v.id('users'),
   },
   handler: async (ctx, args) => {
+    const { user } = await requireOrgRole(ctx, args.organizationId, [
+      'owner',
+      'admin',
+      'editor',
+    ]);
+    if (args.createdBy !== user._id) {
+      throw new Error('Not authorized');
+    }
     const now = Date.now();
     
     const presentationId = await ctx.db.insert('presentations', {
       organizationId: args.organizationId,
       title: args.title,
       description: args.description,
-      createdBy: args.createdBy,
+      createdBy: user._id,
       slideOrder: [],
       isArchived: false,
       tags: [],
@@ -127,6 +142,7 @@ export const update = mutation({
     tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
+    await requirePresentationRole(ctx, args.id, ['owner', 'admin', 'editor']);
     const { id, ...updates } = args;
     await ctx.db.patch(id, {
       ...updates,
@@ -138,6 +154,7 @@ export const update = mutation({
 export const archive = mutation({
   args: { id: v.id('presentations') },
   handler: async (ctx, args) => {
+    await requirePresentationRole(ctx, args.id, ['owner', 'admin', 'editor']);
     await ctx.db.patch(args.id, {
       isArchived: true,
       updatedAt: Date.now(),
@@ -151,6 +168,7 @@ export const updateSlideOrder = mutation({
     slideOrder: v.array(v.id('slides')),
   },
   handler: async (ctx, args) => {
+    await requirePresentationRole(ctx, args.id, ['owner', 'admin', 'editor']);
     await ctx.db.patch(args.id, {
       slideOrder: args.slideOrder,
       updatedAt: Date.now(),
@@ -161,8 +179,11 @@ export const updateSlideOrder = mutation({
 export const remove = mutation({
   args: { id: v.id('presentations') },
   handler: async (ctx, args) => {
-    const presentation = await ctx.db.get(args.id);
-    if (!presentation) return;
+    const { presentation } = await requirePresentationRole(ctx, args.id, [
+      'owner',
+      'admin',
+      'editor',
+    ]);
 
     // Delete all slides
     for (const slideId of presentation.slideOrder) {
