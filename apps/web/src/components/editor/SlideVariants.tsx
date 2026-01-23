@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
   cn,
 } from '@sanctuary/ui';
-import { useEditorStore, Slide, SlideVariant, SlideElement } from '../../stores/editor';
+import { useEditorStore, Slide, SlideVariant } from '../../stores/editor';
 
 // Variant labels
 const VARIANT_LABELS = [
@@ -49,7 +49,6 @@ export function SlideVariantsDialog({
 }: SlideVariantsDialogProps) {
   const { showVariantsDialog, setShowVariantsDialog } = useEditorStore();
   const [editingVariant, setEditingVariant] = useState<string | null>(null);
-  const [newVariantLabel, setNewVariantLabel] = useState('');
   
   if (!slide) return null;
   
@@ -67,7 +66,6 @@ export function SlideVariantsDialog({
     onUpdateSlide({
       variants: [...variants, newVariant],
     });
-    setNewVariantLabel('');
   };
   
   // Delete variant
@@ -85,15 +83,6 @@ export function SlideVariantsDialog({
   const handleSwitchVariant = (variantId: string) => {
     onSwitchVariant(variantId);
     setShowVariantsDialog(false);
-  };
-  
-  // Rename variant
-  const handleRenameVariant = (variantId: string, newLabel: string) => {
-    const newVariants = variants.map(v =>
-      v.id === variantId ? { ...v, label: newLabel } : v
-    );
-    onUpdateSlide({ variants: newVariants });
-    setEditingVariant(null);
   };
   
   // Duplicate variant
@@ -158,7 +147,6 @@ export function SlideVariantsDialog({
             {/* Custom variants */}
             {variants.map((variant) => {
               const isActive = activeVariantId === variant.id;
-              const labelConfig = VARIANT_LABELS.find(l => l.value === variant.label.toLowerCase());
               
               return (
                 <div

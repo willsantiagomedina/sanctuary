@@ -2,6 +2,7 @@ import { SignIn, SignUp } from '@clerk/clerk-react';
 import { useLocation } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { useStore } from '../stores/app';
+import { Heading, Text } from '@sanctuary/ui';
 
 export default function Auth() {
   const location = useLocation();
@@ -22,22 +23,24 @@ export default function Auth() {
           <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-8 shadow-xl shadow-primary/20">
             <Sparkles className="h-12 w-12 text-white" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">Sanctuary</h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
+          <Heading level={1} className="text-4xl mb-4">
+            Sanctuary
+          </Heading>
+          <Text variant="body" className="text-lg text-muted-foreground leading-relaxed">
             Create beautiful worship presentations with ease. Scripture, songs, and slides — all in one place.
-          </p>
+          </Text>
           <div className="flex justify-center gap-8 mt-12 text-sm text-muted-foreground">
             <div className="text-center">
-              <div className="text-3xl font-bold text-foreground mb-1">10+</div>
-              <div>Bible Versions</div>
+              <Text className="text-3xl font-bold text-foreground mb-1">10+</Text>
+              <Text variant="small">Bible Versions</Text>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-foreground mb-1">100+</div>
-              <div>Worship Songs</div>
+              <Text className="text-3xl font-bold text-foreground mb-1">100+</Text>
+              <Text variant="small">Worship Songs</Text>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-foreground mb-1">∞</div>
-              <div>Presentations</div>
+              <Text className="text-3xl font-bold text-foreground mb-1">∞</Text>
+              <Text variant="small">Presentations</Text>
             </div>
           </div>
         </div>
@@ -58,7 +61,9 @@ export default function Auth() {
                 }}
               />
             </div>
-            <h1 className="text-2xl font-bold">Sanctuary</h1>
+            <Heading level={2} className="text-2xl">
+              Sanctuary
+            </Heading>
           </div>
 
           {/* Clerk Sign In / Sign Up */}

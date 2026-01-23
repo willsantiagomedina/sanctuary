@@ -6,7 +6,6 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  AlignJustify,
   Type,
   Palette,
   Trash2,
@@ -16,7 +15,6 @@ import {
   ArrowUp,
   ArrowDown,
   MoreHorizontal,
-  Link,
   Crop,
   FlipHorizontal,
   FlipVertical,
@@ -55,7 +53,7 @@ interface ContextToolbarProps {
 // Floating toolbar that appears above selected element
 export function ContextToolbar({
   element,
-  elements,
+  elements: _elements,
   onUpdateStyle,
   onDelete,
   onDuplicate,
@@ -373,12 +371,12 @@ export function MultiSelectToolbar({
   onAlignLeft,
   onAlignCenter,
   onAlignRight,
-  onAlignTop,
-  onAlignMiddle,
-  onAlignBottom,
-  onDistributeH,
-  onDistributeV,
-  onGroup,
+  onAlignTop: _onAlignTop,
+  onAlignMiddle: _onAlignMiddle,
+  onAlignBottom: _onAlignBottom,
+  onDistributeH: _onDistributeH,
+  onDistributeV: _onDistributeV,
+  onGroup: _onGroup,
   onDelete,
 }: MultiSelectToolbarProps) {
   if (elementIds.length < 2) return null;

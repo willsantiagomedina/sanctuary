@@ -1,6 +1,8 @@
 // Type definitions for Sanctuary Electron API
 // This file declares the global window.sanctuary API exposed by Electron's preload script
 
+import type { Presentation, Slide } from '@sanctuary/shared';
+
 export interface DisplayInfo {
   id: number;
   label: string;
@@ -21,7 +23,7 @@ export interface MidiMessage {
 
 export interface OscMessage {
   address: string;
-  args: any[];
+  args: unknown[];
 }
 
 export interface SystemInfo {
@@ -49,8 +51,8 @@ export interface SanctuaryElectronAPI {
     open: (displayId?: number) => Promise<boolean>;
     close: () => Promise<boolean>;
     isOpen: () => Promise<boolean>;
-    sendSlide: (slideData: any) => Promise<void>;
-    onSlideUpdate: (callback: (slideData: any) => void) => () => void;
+    sendSlide: (slideData: Slide) => Promise<void>;
+    onSlideUpdate: (callback: (slideData: Slide) => void) => () => void;
     onClosed: (callback: () => void) => () => void;
   };
 
@@ -69,15 +71,15 @@ export interface SanctuaryElectronAPI {
 
   // OSC support
   osc: {
-    send: (address: string, args: any[]) => Promise<{ success: boolean; error?: string }>;
+    send: (address: string, args: unknown[]) => Promise<{ success: boolean; error?: string }>;
     startServer: (port: number) => Promise<{ success: boolean; error?: string }>;
     onMessage: (callback: (message: OscMessage) => void) => () => void;
   };
 
   // File system
   fs: {
-    exportPresentation: (data: any, filename: string) => Promise<{ success: boolean; path?: string; canceled?: boolean }>;
-    importPresentation: () => Promise<{ success: boolean; path?: string; canceled?: boolean }>;
+    exportPresentation: (data: Presentation, filename: string) => Promise<{ success: boolean; path?: string; canceled?: boolean }>;
+    importPresentation: () => Promise<{ success: boolean; path?: string; canceled?: boolean; data?: Presentation }>;
   };
 
   // System info

@@ -17,7 +17,6 @@ import {
   Tabs, 
   TabsList, 
   TabsTrigger, 
-  TabsContent, 
   Dialog, 
   DialogContent, 
   DialogHeader, 
@@ -25,6 +24,8 @@ import {
   Card,
   CardContent,
   Badge,
+  Text,
+  Heading,
 } from '@sanctuary/ui';
 import { ALL_SONGS, getSongsByLanguage, Song, SongSection } from '../data/songs';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -132,7 +133,10 @@ export default function SongLibrary() {
           />
         </div>
         {/* Language tabs */}
-        <Tabs value={selectedLanguage} onValueChange={(v) => setSelectedLanguage(v as any)}>
+        <Tabs
+          value={selectedLanguage}
+          onValueChange={(value) => setSelectedLanguage(value as 'all' | 'en' | 'es' | 'ja')}
+        >
           <div className="flex items-center justify-between mb-6">
             <TabsList>
               <TabsTrigger value="all" className="gap-2">
@@ -165,8 +169,12 @@ export default function SongLibrary() {
                   <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
                     <Music className="h-8 w-8 text-muted-foreground/50" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-1">No songs found</h3>
-                  <p className="text-sm text-muted-foreground">Try a different search term or filter</p>
+                  <Heading level={3} className="text-lg mb-1">
+                    No songs found
+                  </Heading>
+                  <Text variant="muted" className="text-sm">
+                    Try a different search term or filter
+                  </Text>
                 </div>
               </CardContent>
             </Card>
@@ -279,20 +287,20 @@ export default function SongLibrary() {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="h-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add
-                          </Button>
-                        </div>
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                          {section.lyrics}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
+                        className="h-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add
+                      </Button>
+                    </div>
+                    <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap leading-relaxed prose-p:my-0">
+                      <p>{section.lyrics}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
 
               <div className="flex gap-2 pt-4 border-t">
                 <Button className="flex-1" onClick={() => handleInsertToSlide(selectedSong)}>

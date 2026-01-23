@@ -11,6 +11,24 @@ import {
 } from 'lucide-react';
 import { Button, cn } from '@sanctuary/ui';
 
+interface SlideElementStyle {
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: string;
+  color?: string;
+  backgroundColor?: string;
+  textAlign?: 'left' | 'center' | 'right';
+  verticalAlign?: 'top' | 'middle' | 'bottom';
+  opacity?: number;
+  borderRadius?: number;
+  padding?: number;
+  lineHeight?: number;
+  letterSpacing?: number;
+  objectFit?: 'cover' | 'contain' | 'fill';
+  fontStyle?: string;
+  textDecoration?: string;
+}
+
 interface SlideElement {
   id: string;
   type: string;
@@ -20,7 +38,7 @@ interface SlideElement {
   y: number;
   width: number;
   height: number;
-  style: any;
+  style: SlideElementStyle;
 }
 
 interface Slide {

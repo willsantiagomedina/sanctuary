@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { cn } from '@sanctuary/ui';
+import { cn, Heading, Text } from '@sanctuary/ui';
 
 interface PageHeaderProps {
   title: ReactNode;
@@ -38,9 +38,13 @@ export function PageHeader({
             </div>
           )}
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+            <Heading level={1} className="text-balance">
+              {title}
+            </Heading>
             {description && (
-              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+              <Text variant="muted" className="mt-1 text-balance">
+                {description}
+              </Text>
             )}
           </div>
         </div>

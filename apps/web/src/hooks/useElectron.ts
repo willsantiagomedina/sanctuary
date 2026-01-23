@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { SanctuaryElectronAPI, DisplayInfo, SystemInfo } from '../types/electron';
+import type { Presentation, Slide } from '@sanctuary/shared';
 
 /**
  * Check if running in Electron
@@ -130,7 +131,7 @@ export function useOutputWindow() {
     }
   }, [api]);
 
-  const sendSlide = useCallback(async (slideData: any) => {
+  const sendSlide = useCallback(async (slideData: Slide) => {
     if (api) {
       await api.output.sendSlide(slideData);
     }
@@ -281,7 +282,7 @@ export function useMenuEvents(handlers: {
 export function useFileOperations() {
   const { api, isElectron } = useElectron();
 
-  const exportPresentation = useCallback(async (data: any, filename: string) => {
+  const exportPresentation = useCallback(async (data: Presentation, filename: string) => {
     if (api) {
       return api.fs.exportPresentation(data, filename);
     }
@@ -301,7 +302,7 @@ export function useFileOperations() {
       return api.fs.importPresentation();
     }
     // Browser fallback: file input
-    return new Promise<{ success: boolean; data?: any; canceled?: boolean }>((resolve) => {
+    return new Promise<{ success: boolean; data?: Presentation; canceled?: boolean }>((resolve) => {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = '.sanctuary,.json';
@@ -309,7 +310,7 @@ export function useFileOperations() {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) {
           const text = await file.text();
-          resolve({ success: true, data: JSON.parse(text) });
+          resolve({ success: true, data: JSON.parse(text) as Presentation });
         } else {
           resolve({ success: false, canceled: true });
         }

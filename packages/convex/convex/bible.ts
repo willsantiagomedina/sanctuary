@@ -1,6 +1,18 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireIdentity } from "./auth";
+import {
+  BibleBookSeedInputSchema,
+  BibleBooksArgsSchema,
+  BibleBooksByVersionCodeArgsSchema,
+  BibleChapterArgsSchema,
+  BibleChapterByReferenceArgsSchema,
+  BibleChapterSeedInputSchema,
+  BibleSearchArgsSchema,
+  BibleVerseArgsSchema,
+  BibleVersionLanguageArgsSchema,
+  BibleVersionSeedInputSchema,
+} from "./domain/bible";
 
 // Get all Bible versions
 export const getVersions = query({
@@ -15,10 +27,11 @@ export const getVersions = query({
 export const getVersionsByLanguage = query({
   args: { language: v.string() },
   handler: async (ctx, args) => {
+    const { language } = BibleVersionLanguageArgsSchema.parse(args);
     await requireIdentity(ctx);
     return await ctx.db
       .query("bibleVersions")
-      .withIndex("by_language", (q) => q.eq("language", args.language))
+      .withIndex("by_language", (q) => q.eq("language", language))
       .collect();
   },
 });
@@ -27,10 +40,11 @@ export const getVersionsByLanguage = query({
 export const getBooks = query({
   args: { versionId: v.id("bibleVersions") },
   handler: async (ctx, args) => {
+    const { versionId } = BibleBooksArgsSchema.parse(args);
     await requireIdentity(ctx);
     return await ctx.db
       .query("bibleBooks")
-      .withIndex("by_version", (q) => q.eq("versionId", args.versionId))
+      .withIndex("by_version", (q) => q.eq("versionId", versionId))
       .collect();
   },
 });
@@ -38,16 +52,17 @@ export const getBooks = query({
 export const getBooksByVersionCode = query({
   args: { versionCode: v.string() },
   handler: async (ctx, args) => {
+    const { versionCode } = BibleBooksByVersionCodeArgsSchema.parse(args);
     await requireIdentity(ctx);
-    const normalizedCode = args.versionCode.toLowerCase();
+    const normalizedCode = versionCode.toLowerCase();
     let version = await ctx.db
       .query("bibleVersions")
       .withIndex("by_code", (q) => q.eq("code", normalizedCode))
       .first();
-    if (!version && normalizedCode !== args.versionCode) {
+    if (!version && normalizedCode !== versionCode) {
       version = await ctx.db
         .query("bibleVersions")
-        .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+        .withIndex("by_code", (q) => q.eq("code", versionCode))
         .first();
     }
     if (!version) return [];
@@ -68,11 +83,12 @@ export const getChapter = query({
     chapter: v.number(),
   },
   handler: async (ctx, args) => {
+    const { bookId, chapter } = BibleChapterArgsSchema.parse(args);
     await requireIdentity(ctx);
     return await ctx.db
       .query("bibleChapters")
       .withIndex("by_book_chapter", (q) => 
-        q.eq("bookId", args.bookId).eq("chapter", args.chapter)
+        q.eq("bookId", bookId).eq("chapter", chapter)
       )
       .first();
   },
@@ -85,16 +101,17 @@ export const getChapterByReference = query({
     chapter: v.number(),
   },
   handler: async (ctx, args) => {
+    const { versionCode, book, chapter } = BibleChapterByReferenceArgsSchema.parse(args);
     await requireIdentity(ctx);
-    const normalizedCode = args.versionCode.toLowerCase();
+    const normalizedCode = versionCode.toLowerCase();
     let version = await ctx.db
       .query("bibleVersions")
       .withIndex("by_code", (q) => q.eq("code", normalizedCode))
       .first();
-    if (!version && normalizedCode !== args.versionCode) {
+    if (!version && normalizedCode !== versionCode) {
       version = await ctx.db
         .query("bibleVersions")
-        .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+        .withIndex("by_code", (q) => q.eq("code", versionCode))
         .first();
     }
     if (!version) return null;
@@ -104,8 +121,8 @@ export const getChapterByReference = query({
       .withIndex("by_version", (q) => q.eq("versionId", version._id))
       .filter((q) =>
         q.or(
-          q.eq(q.field("name"), args.book),
-          q.eq(q.field("shortName"), args.book)
+          q.eq(q.field("name"), book),
+          q.eq(q.field("shortName"), book)
         )
       )
       .first();
@@ -114,7 +131,7 @@ export const getChapterByReference = query({
     return await ctx.db
       .query("bibleChapters")
       .withIndex("by_book_chapter", (q) =>
-        q.eq("bookId", bookRecord._id).eq("chapter", args.chapter)
+        q.eq("bookId", bookRecord._id).eq("chapter", chapter)
       )
       .first();
   },
@@ -129,16 +146,17 @@ export const getVerse = query({
     verse: v.number(),
   },
   handler: async (ctx, args) => {
+    const { versionCode, book, chapter, verse } = BibleVerseArgsSchema.parse(args);
     await requireIdentity(ctx);
-    const normalizedCode = args.versionCode.toLowerCase();
+    const normalizedCode = versionCode.toLowerCase();
     let version = await ctx.db
       .query("bibleVersions")
       .withIndex("by_code", (q) => q.eq("code", normalizedCode))
       .first();
-    if (!version && normalizedCode !== args.versionCode) {
+    if (!version && normalizedCode !== versionCode) {
       version = await ctx.db
         .query("bibleVersions")
-        .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+        .withIndex("by_code", (q) => q.eq("code", versionCode))
         .first();
     }
     
@@ -149,8 +167,8 @@ export const getVerse = query({
       .withIndex("by_version", (q) => q.eq("versionId", version._id))
       .filter((q) =>
         q.or(
-          q.eq(q.field("name"), args.book),
-          q.eq(q.field("shortName"), args.book)
+          q.eq(q.field("name"), book),
+          q.eq(q.field("shortName"), book)
         )
       )
       .first();
@@ -160,14 +178,14 @@ export const getVerse = query({
     const chapterData = await ctx.db
       .query("bibleChapters")
       .withIndex("by_book_chapter", (q) => 
-        q.eq("bookId", bookRecord._id).eq("chapter", args.chapter)
+        q.eq("bookId", bookRecord._id).eq("chapter", chapter)
       )
       .first();
     
     if (!chapterData) return null;
 
-    const verseData = chapterData.verses.find((v) => v.verse === args.verse);
-    return verseData ? { ...verseData, book: args.book, chapter: args.chapter } : null;
+    const verseData = chapterData.verses.find((v) => v.verse === verse);
+    return verseData ? { ...verseData, book, chapter } : null;
   },
 });
 
@@ -179,16 +197,17 @@ export const searchVerses = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const { versionCode, query, limit } = BibleSearchArgsSchema.parse(args);
     await requireIdentity(ctx);
-    const normalizedCode = args.versionCode.toLowerCase();
+    const normalizedCode = versionCode.toLowerCase();
     let version = await ctx.db
       .query("bibleVersions")
       .withIndex("by_code", (q) => q.eq("code", normalizedCode))
       .first();
-    if (!version && normalizedCode !== args.versionCode) {
+    if (!version && normalizedCode !== versionCode) {
       version = await ctx.db
         .query("bibleVersions")
-        .withIndex("by_code", (q) => q.eq("code", args.versionCode))
+        .withIndex("by_code", (q) => q.eq("code", versionCode))
         .first();
     }
     
@@ -206,11 +225,11 @@ export const searchVerses = query({
       text: string;
     }> = [];
 
-    const searchLower = args.query.toLowerCase();
-    const limit = args.limit || 50;
+    const searchLower = query.toLowerCase();
+    const effectiveLimit = limit || 50;
 
     for (const book of books) {
-      if (results.length >= limit) break;
+      if (results.length >= effectiveLimit) break;
       
       const chapters = await ctx.db
         .query("bibleChapters")
@@ -218,10 +237,10 @@ export const searchVerses = query({
         .collect();
 
       for (const chapter of chapters) {
-        if (results.length >= limit) break;
+        if (results.length >= effectiveLimit) break;
         
         for (const verse of chapter.verses) {
-          if (results.length >= limit) break;
+          if (results.length >= effectiveLimit) break;
           
           if (verse.text.toLowerCase().includes(searchLower)) {
             results.push({
@@ -250,30 +269,31 @@ export const seedBibleVersion = internalMutation({
     verseCount: v.number(),
   },
   handler: async (ctx, args) => {
+    const input = BibleVersionSeedInputSchema.parse(args);
     // Check if already exists
     const existing = await ctx.db
       .query("bibleVersions")
-      .withIndex("by_code", (q) => q.eq("code", args.code))
+      .withIndex("by_code", (q) => q.eq("code", input.code))
       .first();
     
     if (existing) {
       await ctx.db.patch(existing._id, {
-        name: args.name,
-        language: args.language,
-        copyright: args.copyright,
-        bookCount: args.bookCount,
-        verseCount: args.verseCount,
+        name: input.name,
+        language: input.language,
+        copyright: input.copyright,
+        bookCount: input.bookCount,
+        verseCount: input.verseCount,
       });
       return existing._id;
     }
 
     return await ctx.db.insert("bibleVersions", {
-      code: args.code,
-      name: args.name,
-      language: args.language,
-      copyright: args.copyright,
-      bookCount: args.bookCount,
-      verseCount: args.verseCount,
+      code: input.code,
+      name: input.name,
+      language: input.language,
+      copyright: input.copyright,
+      bookCount: input.bookCount,
+      verseCount: input.verseCount,
     });
   },
 });
@@ -289,17 +309,18 @@ export const seedBibleBook = internalMutation({
     chapters: v.number(),
   },
   handler: async (ctx, args) => {
+    const input = BibleBookSeedInputSchema.parse(args);
     // Check if already exists
     const existing = await ctx.db
       .query("bibleBooks")
       .withIndex("by_version_number", (q) => 
-        q.eq("versionId", args.versionId).eq("bookNumber", args.bookNumber)
+        q.eq("versionId", input.versionId).eq("bookNumber", input.bookNumber)
       )
       .first();
     
     if (existing) return existing._id;
 
-    return await ctx.db.insert("bibleBooks", args);
+    return await ctx.db.insert("bibleBooks", input);
   },
 });
 
@@ -314,20 +335,21 @@ export const seedBibleChapter = internalMutation({
     })),
   },
   handler: async (ctx, args) => {
+    const input = BibleChapterSeedInputSchema.parse(args);
     // Check if already exists
     const existing = await ctx.db
       .query("bibleChapters")
       .withIndex("by_book_chapter", (q) => 
-        q.eq("bookId", args.bookId).eq("chapter", args.chapter)
+        q.eq("bookId", input.bookId).eq("chapter", input.chapter)
       )
       .first();
     
     if (existing) {
       // Update existing
-      await ctx.db.patch(existing._id, { verses: args.verses });
+      await ctx.db.patch(existing._id, { verses: input.verses });
       return existing._id;
     }
 
-    return await ctx.db.insert("bibleChapters", args);
+    return await ctx.db.insert("bibleChapters", input);
   },
 });

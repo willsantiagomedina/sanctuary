@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useRef } from 'react';
 import {
   Undo2,
   Redo2,
@@ -9,15 +9,11 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  AlignJustify,
   ChevronDown,
   Minus,
   Plus,
   Palette,
-  Highlighter,
   Image,
-  Square,
-  Circle,
   ArrowUp,
   ArrowDown,
   ArrowUpToLine,

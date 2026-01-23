@@ -1,11 +1,20 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireOrgMember, requireOrgRole, requireUser } from "./auth";
+import {
+  SongCreateInputSchema,
+  SongIdArgsSchema,
+  SongLanguageArgsSchema,
+  SongListArgsSchema,
+  SongSearchArgsSchema,
+  SongSeedInputSchema,
+} from "./domain/songs";
 
 // Get songs by language
 export const getSongsByLanguage = query({
   args: { language: v.string() },
   handler: async (ctx, args) => {
+    const { language } = SongLanguageArgsSchema.parse(args);
     const { user } = await requireUser(ctx);
     const memberships = await ctx.db
       .query("organizationMembers")
@@ -14,7 +23,7 @@ export const getSongsByLanguage = query({
     const orgIds = new Set(memberships.map((m) => m.organizationId));
     const songs = await ctx.db
       .query("songs")
-      .withIndex("by_language", (q) => q.eq("language", args.language))
+      .withIndex("by_language", (q) => q.eq("language", language))
       .collect();
     return songs.filter((song) => !song.organizationId || orgIds.has(song.organizationId));
   },
@@ -27,25 +36,25 @@ export const searchSongs = query({
     language: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const { query, language } = SongSearchArgsSchema.parse(args);
     const { user } = await requireUser(ctx);
     const memberships = await ctx.db
       .query("organizationMembers")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
     const orgIds = new Set(memberships.map((m) => m.organizationId));
-    if (args.language) {
-      const language = args.language;
+    if (language) {
       const songs = await ctx.db
         .query("songs")
         .withSearchIndex("search_title", (q) =>
-          q.search("title", args.query).eq("language", language)
+          q.search("title", query).eq("language", language)
         )
         .take(50);
       return songs.filter((song) => !song.organizationId || orgIds.has(song.organizationId));
     }
     const songs = await ctx.db
       .query("songs")
-      .withSearchIndex("search_title", (q) => q.search("title", args.query))
+      .withSearchIndex("search_title", (q) => q.search("title", query))
       .take(50);
     return songs.filter((song) => !song.organizationId || orgIds.has(song.organizationId));
   },
@@ -55,7 +64,8 @@ export const searchSongs = query({
 export const getSong = query({
   args: { id: v.id("songs") },
   handler: async (ctx, args) => {
-    const song = await ctx.db.get(args.id);
+    const { id } = SongIdArgsSchema.parse(args);
+    const song = await ctx.db.get(id);
     if (!song) return null;
     if (song.organizationId) {
       await requireOrgMember(ctx, song.organizationId);
@@ -72,6 +82,7 @@ export const getAllSongs = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const { limit } = SongListArgsSchema.parse(args);
     const { user } = await requireUser(ctx);
     const memberships = await ctx.db
       .query("organizationMembers")
@@ -81,7 +92,7 @@ export const getAllSongs = query({
     const songs = await ctx.db
       .query("songs")
       .order("desc")
-      .take(args.limit || 100);
+      .take(limit || 100);
     return songs.filter((song) => !song.organizationId || orgIds.has(song.organizationId));
   },
 });
@@ -106,12 +117,13 @@ export const addSong = mutation({
     organizationId: v.optional(v.id("organizations")),
   },
   handler: async (ctx, args) => {
+    const input = SongCreateInputSchema.parse(args);
     await requireUser(ctx);
-    if (args.organizationId) {
-      await requireOrgRole(ctx, args.organizationId, ["owner", "admin", "editor"]);
+    if (input.organizationId) {
+      await requireOrgRole(ctx, input.organizationId, ["owner", "admin", "editor"]);
     }
     return await ctx.db.insert("songs", {
-      ...args,
+      ...input,
       createdAt: Date.now(),
     });
   },
@@ -136,18 +148,19 @@ export const seedSong = internalMutation({
     tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
+    const input = SongSeedInputSchema.parse(args);
     // Check if already exists
     const existing = await ctx.db
       .query("songs")
       .withSearchIndex("search_title", (q) =>
-        q.search("title", args.title).eq("language", args.language)
+        q.search("title", input.title).eq("language", input.language)
       )
       .first();
     
     if (existing) return existing._id;
 
     return await ctx.db.insert("songs", {
-      ...args,
+      ...input,
       createdAt: Date.now(),
     });
   },

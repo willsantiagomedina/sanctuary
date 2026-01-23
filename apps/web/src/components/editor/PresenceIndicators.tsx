@@ -42,7 +42,7 @@ interface PresenceCursorProps {
   zoom: number;
 }
 
-export function PresenceCursor({ user, containerRef, zoom }: PresenceCursorProps) {
+export function PresenceCursor({ user, containerRef: _containerRef, zoom }: PresenceCursorProps) {
   const scale = zoom / 100;
   
   if (user.cursorX === undefined || user.cursorY === undefined) return null;

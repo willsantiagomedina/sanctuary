@@ -8,6 +8,15 @@
  * - CORS headers for the web app
  */
 
+import {
+  BibleReferenceSchema,
+  BibleSearchParamsSchema,
+  BibleSearchResponseSchema,
+  BibleVerseResponseSchema,
+  BibleVersionsResponseSchema,
+  type BibleReference,
+} from './domain';
+
 interface Env {
   BIBLE_CACHE: KVNamespace;
   BIBLE_API_KEY: string;
@@ -15,14 +24,6 @@ interface Env {
   CACHE_TTL: string;
   RATE_LIMIT_REQUESTS: string;
   RATE_LIMIT_WINDOW: string;
-}
-
-interface BibleReference {
-  book: string;
-  chapter: number;
-  verseStart?: number;
-  verseEnd?: number;
-  version?: string;
 }
 
 const CORS_HEADERS = {
@@ -63,25 +64,27 @@ export default {
       }
 
       if (path.startsWith('/search')) {
-        const query = url.searchParams.get('q');
-        const version = url.searchParams.get('version') || 'kjv';
-        if (!query) {
+        const parsed = parseSearchParams(url);
+        if (!parsed) {
           return jsonResponse({ error: 'Missing search query' }, 400);
         }
-        return await handleSearch(query, version, env, ctx);
+        return await handleSearch(parsed.query, parsed.version, env, ctx);
       }
 
       // Parse verse reference: /john/3/16 or /john/3/16-18
       const refMatch = path.match(/^\/(\w+)\/(\d+)(?:\/(\d+)(?:-(\d+))?)?$/);
       if (refMatch) {
-        const ref: BibleReference = {
+        const parsedRef = BibleReferenceSchema.safeParse({
           book: refMatch[1],
           chapter: parseInt(refMatch[2]),
           verseStart: refMatch[3] ? parseInt(refMatch[3]) : undefined,
           verseEnd: refMatch[4] ? parseInt(refMatch[4]) : undefined,
           version: url.searchParams.get('version') || 'kjv',
-        };
-        return await handleVerseReference(ref, env, ctx);
+        });
+        if (!parsedRef.success) {
+          return jsonResponse({ error: 'Invalid endpoint' }, 404);
+        }
+        return await handleVerseReference(parsedRef.data, env, ctx);
       }
 
       return jsonResponse({ error: 'Invalid endpoint' }, 404);
@@ -109,6 +112,22 @@ async function checkRateLimit(request: Request, env: Env): Promise<{ allowed: bo
   return { allowed: true };
 }
 
+function parseSearchParams(url: URL): { query: string; version: string } | null {
+  const parsed = BibleSearchParamsSchema.safeParse({
+    query: url.searchParams.get('q'),
+    version: url.searchParams.get('version'),
+  });
+
+  if (!parsed.success) {
+    return null;
+  }
+
+  return {
+    query: parsed.data.query,
+    version: parsed.data.version ?? 'kjv',
+  };
+}
+
 async function handleVersions(env: Env): Promise<Response> {
   // Return supported Bible versions
   const versions = [
@@ -117,7 +136,8 @@ async function handleVersions(env: Env): Promise<Response> {
     { code: 'asv', name: 'American Standard Version', language: 'en' },
   ];
 
-  return jsonResponse({ versions }, 200);
+  const payload = BibleVersionsResponseSchema.parse({ versions });
+  return jsonResponse(payload, 200);
 }
 
 async function handleSearch(query: string, version: string, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -130,21 +150,21 @@ async function handleSearch(query: string, version: string, env: Env, ctx: Execu
   }
 
   // For now, return a placeholder - integrate with actual Bible API
-  const results = {
+  const payload = BibleSearchResponseSchema.parse({
     query,
     version,
     results: [],
     message: 'Search functionality requires Bible API integration',
-  };
+  });
 
   // Cache the result
   ctx.waitUntil(
-    env.BIBLE_CACHE.put(cacheKey, JSON.stringify(results), {
+    env.BIBLE_CACHE.put(cacheKey, JSON.stringify(payload), {
       expirationTtl: parseInt(env.CACHE_TTL),
     })
   );
 
-  return jsonResponse(results, 200, { 'X-Cache': 'MISS' });
+  return jsonResponse(payload, 200, { 'X-Cache': 'MISS' });
 }
 
 async function handleVerseReference(ref: BibleReference, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -157,20 +177,20 @@ async function handleVerseReference(ref: BibleReference, env: Env, ctx: Executio
   }
 
   // Placeholder response - integrate with actual Bible API or Convex
-  const result = {
+  const payload = BibleVerseResponseSchema.parse({
     reference: ref,
     text: `[Bible text for ${ref.book} ${ref.chapter}${ref.verseStart ? `:${ref.verseStart}` : ''}${ref.verseEnd ? `-${ref.verseEnd}` : ''}]`,
     message: 'Full Bible data is stored in Convex. Use this endpoint for quick lookups.',
-  };
+  });
 
   // Cache the result
   ctx.waitUntil(
-    env.BIBLE_CACHE.put(cacheKey, JSON.stringify(result), {
+    env.BIBLE_CACHE.put(cacheKey, JSON.stringify(payload), {
       expirationTtl: parseInt(env.CACHE_TTL),
     })
   );
 
-  return jsonResponse(result, 200, { 'X-Cache': 'MISS' });
+  return jsonResponse(payload, 200, { 'X-Cache': 'MISS' });
 }
 
 function jsonResponse(data: unknown, status: number, extraHeaders: Record<string, string> = {}): Response {

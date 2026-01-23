@@ -19,13 +19,10 @@ import {
   TabsList, 
   TabsTrigger, 
   TabsContent, 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
   Card,
   CardContent,
   Badge,
+  Text,
 } from '@sanctuary/ui';
 import { formatReference } from '../data/bible';
 import { useBibleBooks, useBibleChapters, useBibleSearch, useBibleTranslations, useBibleVerses } from '../hooks/useBible';
@@ -55,7 +52,6 @@ export default function BibleExplorer() {
   const [selectedChapter, setSelectedChapter] = useState(3);
   const [selectedVerse, setSelectedVerse] = useState<number | null>(16);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showVerseModal, setShowVerseModal] = useState(false);
   const [activeTab, setActiveTab] = useState('browse');
   const [copiedVerse, setCopiedVerse] = useState<string | null>(null);
   const { verses } = useBibleVerses(selectedVersion, selectedBook, selectedChapter);
@@ -103,7 +99,7 @@ export default function BibleExplorer() {
   const selectedVerseText = useMemo(() => {
     if (!selectedVerse) return null;
     return verses.find((verse) => verse.verse === selectedVerse)?.text || null;
-  }, [selectedBook, selectedChapter, selectedVerse, selectedVersion, verses]);
+  }, [selectedVerse, verses]);
 
   useEffect(() => {
     if (availableBooks.length === 0) return;
@@ -170,7 +166,6 @@ export default function BibleExplorer() {
     };
 
     localStorage.setItem(`presentation-${presId}`, JSON.stringify(presentation));
-    setShowVerseModal(false);
     navigate(`/presentations/${presId}`);
   };
 
@@ -235,7 +230,7 @@ export default function BibleExplorer() {
               <Card>
                 <CardContent className="p-0">
                   <div className="p-4 border-b">
-                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Book</h3>
+                    <Text variant="label">Book</Text>
                   </div>
                   <ScrollArea className="h-[50vh]">
                     <div className="p-2">
@@ -266,7 +261,7 @@ export default function BibleExplorer() {
               <Card>
                 <CardContent className="p-0">
                   <div className="p-4 border-b">
-                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Chapter</h3>
+                    <Text variant="label">Chapter</Text>
                   </div>
                   <ScrollArea className="h-[50vh]">
                     <div className="p-3 grid grid-cols-5 gap-2">
@@ -296,7 +291,7 @@ export default function BibleExplorer() {
               <Card>
                 <CardContent className="p-0">
                   <div className="p-4 border-b">
-                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Verse</h3>
+                    <Text variant="label">Verse</Text>
                   </div>
                   <ScrollArea className="h-[50vh]">
                     <div className="p-3 grid grid-cols-5 gap-2">
@@ -329,15 +324,17 @@ export default function BibleExplorer() {
                       <Sparkles className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-lg italic leading-relaxed">"{selectedVerseText}"</p>
-                      <p className="text-sm text-muted-foreground mt-3 font-medium">
+                      <Text variant="body" className="text-lg italic leading-relaxed">
+                        "{selectedVerseText}"
+                      </Text>
+                      <Text variant="muted" weight="medium" className="mt-3">
                         — {formatReference(
                           selectedBook,
                           selectedChapter,
                           selectedVerse,
                           selectedTranslation?.abbreviation || selectedVersion.toUpperCase()
                         )}
-                      </p>
+                      </Text>
                       <div className="flex gap-2 mt-4">
                         <Button onClick={() => handleInsertVerse(selectedBook, selectedChapter, selectedVerse, selectedVerseText)}>
                           <Plus className="h-4 w-4 mr-2" />
@@ -400,12 +397,16 @@ export default function BibleExplorer() {
                   {searchQuery.length < 3 ? (
                     <div className="text-center py-16">
                       <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                      <p className="text-muted-foreground">Enter at least 3 characters to search</p>
+                      <Text variant="muted">
+                        Enter at least 3 characters to search
+                      </Text>
                     </div>
                   ) : searchResults.length === 0 ? (
                     <div className="text-center py-16">
                       <BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                      <p className="text-muted-foreground">No results found for "{searchQuery}"</p>
+                      <Text variant="muted">
+                        No results found for "{searchQuery}"
+                      </Text>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -423,7 +424,12 @@ export default function BibleExplorer() {
                             </Badge>
                             <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
-                          <p className="text-sm line-clamp-2">{result.text}</p>
+                          <Text
+                            variant="small"
+                            className="prose prose-sm max-w-none text-foreground/90 line-clamp-2 leading-relaxed"
+                          >
+                            {result.text}
+                          </Text>
                         </button>
                       ))}
                     </div>
@@ -458,9 +464,12 @@ export default function BibleExplorer() {
                         </Badge>
                         <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+                      <Text
+                        variant="small"
+                        className="prose prose-sm max-w-none text-muted-foreground line-clamp-3 leading-relaxed"
+                      >
                         {text || verse.preview}
-                      </p>
+                      </Text>
                       {text && (
                         <div className="flex items-center gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button size="sm" variant="secondary" className="h-8">

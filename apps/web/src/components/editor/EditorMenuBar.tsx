@@ -1,16 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   FileText,
-  FolderOpen,
   Download,
   Printer,
-  History,
   Undo2,
   Redo2,
   Scissors,
   Copy,
   ClipboardPaste,
-  Paintbrush,
   MousePointer2,
   ZoomIn,
   ZoomOut,
@@ -51,7 +48,7 @@ import {
   Settings,
   MonitorPlay,
 } from 'lucide-react';
-import { cn, Button, Separator } from '@sanctuary/ui';
+import { cn, Separator } from '@sanctuary/ui';
 
 export interface EditorCommand {
   id: string;

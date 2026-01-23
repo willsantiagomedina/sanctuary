@@ -10,7 +10,6 @@ import {
   Check,
   Keyboard,
   Bell,
-  Shield,
   HelpCircle,
   Settings as SettingsIcon,
 } from 'lucide-react';
@@ -31,6 +30,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
+  Text,
 } from '@sanctuary/ui';
 import { useStore } from '../stores/app';
 import { useAuth } from '../contexts/AuthContext';
@@ -81,12 +81,14 @@ function BibleVersionRow({
             </div>
           )}
           <div>
-            <p className="font-medium text-sm">{translation.name}</p>
-            <p className="text-xs text-muted-foreground">
+            <Text variant="small" weight="medium">
+              {translation.name}
+            </Text>
+            <Text variant="caption">
               {translation.abbreviation || translation.id.toUpperCase()}
               {translation.bookCount ? ` • ${translation.bookCount} books` : ''}
               {translation.verseCount ? ` • ${translation.verseCount.toLocaleString()} verses` : ''}
-            </p>
+            </Text>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -112,15 +114,17 @@ function BibleVersionRow({
         </div>
       </div>
       {unavailableReason && !canDownload && !isDownloaded && (
-        <div className="text-xs text-muted-foreground">{unavailableReason}</div>
+        <Text variant="caption">{unavailableReason}</Text>
       )}
       {(isDownloading || hasError) && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{hasError ? progress.error || 'Download failed' : 'Downloading...'}</span>
-            <span>
+            <Text variant="caption">
+              {hasError ? progress.error || 'Download failed' : 'Downloading...'}
+            </Text>
+            <Text variant="caption">
               {downloadedVerses.toLocaleString()} / {totalVerses.toLocaleString()}
-            </span>
+            </Text>
           </div>
           <Progress value={percent} />
         </div>
@@ -197,8 +201,12 @@ export default function Settings() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="text-lg font-semibold">{user?.name || 'User'}</p>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
+                <Text className="text-lg" weight="semibold">
+                  {user?.name || 'User'}
+                </Text>
+                <Text variant="muted">
+                  {user?.email}
+                </Text>
               </div>
               <Button variant="outline" size="sm">Edit Profile</Button>
             </div>
@@ -223,7 +231,9 @@ export default function Settings() {
                   disabled
                   className="mt-1.5"
                 />
-                <p className="text-xs text-muted-foreground mt-1">Contact support to change your email</p>
+                <Text variant="caption" className="mt-1">
+                  Contact support to change your email
+                </Text>
               </div>
             </div>
           </CardContent>
@@ -259,13 +269,20 @@ export default function Settings() {
                     <Icon className="h-6 w-6" />
                   </div>
                   <div className="text-center">
-                    <span className={cn(
-                      "text-sm font-medium block",
-                      theme === id ? "text-primary" : "text-foreground"
-                    )}>
+                    <Text
+                      as="span"
+                      variant="small"
+                      weight="medium"
+                      className={cn(
+                        "block",
+                        theme === id ? "text-primary" : "text-foreground"
+                      )}
+                    >
                       {label}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{description}</span>
+                    </Text>
+                    <Text as="span" variant="caption">
+                      {description}
+                    </Text>
                   </div>
                   {theme === id && (
                     <Badge variant="default" className="absolute -top-2 -right-2">
@@ -275,12 +292,12 @@ export default function Settings() {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground mt-4">
+            <Text variant="caption" className="mt-4">
               {theme === 'system' 
                 ? `Using system preference (currently ${resolvedTheme} mode)`
                 : `Using ${theme} mode`
               }
-            </p>
+            </Text>
           </CardContent>
         </Card>
 
@@ -297,7 +314,7 @@ export default function Settings() {
             <div className="flex items-center justify-between py-2">
               <div>
                 <Label className="text-sm font-medium">Auto-save presentations</Label>
-                <p className="text-xs text-muted-foreground">Automatically save changes as you work</p>
+                <Text variant="caption">Automatically save changes as you work</Text>
               </div>
               <Switch 
                 checked={autoSave} 
@@ -311,7 +328,7 @@ export default function Settings() {
             <div className="flex items-center justify-between py-2">
               <div>
                 <Label className="text-sm font-medium">Desktop notifications</Label>
-                <p className="text-xs text-muted-foreground">Get notified about important updates</p>
+                <Text variant="caption">Get notified about important updates</Text>
               </div>
               <Switch 
                 checked={notifications} 
@@ -336,9 +353,9 @@ export default function Settings() {
           <CardContent>
             <div className="space-y-3">
               {translationsLoading ? (
-                <div className="text-sm text-muted-foreground">Loading translations...</div>
+                <Text variant="muted">Loading translations...</Text>
               ) : translations.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No translations available.</div>
+                <Text variant="muted">No translations available.</Text>
               ) : (
                 translations.map((translation) => {
                   const seedAvailable = Boolean(getSeedTranslationMeta(translation.id));
@@ -411,7 +428,9 @@ export default function Settings() {
                   key={idx}
                   className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-secondary/50 transition-colors"
                 >
-                  <span className="text-sm text-muted-foreground">{shortcut.action}</span>
+                  <Text variant="small" className="text-muted-foreground">
+                    {shortcut.action}
+                  </Text>
                   <div className="flex items-center gap-1">
                     {shortcut.keys.map((key, i) => (
                       <kbd 
@@ -448,9 +467,9 @@ export default function Settings() {
                 Report a Bug
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-4">
+            <Text variant="caption" className="mt-4">
               Sanctuary v0.1.0 • Made with ❤️ for worship teams
-            </p>
+            </Text>
           </CardContent>
         </Card>
       </div>

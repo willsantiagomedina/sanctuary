@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home,
-  Presentation,
   BookOpen,
   Music,
   Settings,
@@ -25,11 +24,9 @@ import {
   Palette,
   Layers,
   Eye,
-  EyeOff,
   Grid,
   ZoomIn,
   ZoomOut,
-  SlidersHorizontal,
 } from 'lucide-react';
 import {
   CommandDialog,
@@ -43,7 +40,6 @@ import {
 } from '@sanctuary/ui';
 import { useStore } from '../../stores/app';
 import { useEditorStore } from '../../stores/editor';
-import { formatShortcut } from '../../hooks/useKeyboardShortcuts';
 
 interface CommandPaletteContextType {
   open: boolean;

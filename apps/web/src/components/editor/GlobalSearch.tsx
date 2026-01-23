@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search,
   FileText,
@@ -10,7 +10,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, Input, ScrollArea, cn } from '@sanctuary/ui';
+import { Dialog, DialogContent, ScrollArea, cn } from '@sanctuary/ui';
 import { useEditorStore, SearchResult } from '../../stores/editor';
 
 // Search across different content types
@@ -37,36 +37,41 @@ function searchContent(query: string): SearchResult[] {
       }
       
       // Search slide content
-      data.slides?.forEach((slide: any, index: number) => {
-        const elements = slide.elements || [];
-        for (const el of elements) {
-          if (el.content?.toLowerCase().includes(normalizedQuery)) {
+      data.slides?.forEach(
+        (
+          slide: { elements?: Array<{ content?: string }>; notes?: string },
+          index: number
+        ) => {
+          const elements = slide.elements || [];
+          for (const el of elements) {
+            if (el.content?.toLowerCase().includes(normalizedQuery)) {
+              results.push({
+                id: `slide-${data.id}-${index}`,
+                type: 'slide',
+                title: `${data.name} - Slide ${index + 1}`,
+                content: el.content.substring(0, 100) + (el.content.length > 100 ? '...' : ''),
+                slideIndex: index,
+                presentationId: data.id,
+                relevance: el.content.toLowerCase().startsWith(normalizedQuery) ? 80 : 40,
+              });
+              break; // Only one result per slide
+            }
+          }
+          
+          // Search notes
+          if (slide.notes?.toLowerCase().includes(normalizedQuery)) {
             results.push({
-              id: `slide-${data.id}-${index}`,
-              type: 'slide',
-              title: `${data.name} - Slide ${index + 1}`,
-              content: el.content.substring(0, 100) + (el.content.length > 100 ? '...' : ''),
+              id: `note-${data.id}-${index}`,
+              type: 'note',
+              title: `Notes: ${data.name} - Slide ${index + 1}`,
+              content: slide.notes.substring(0, 100) + (slide.notes.length > 100 ? '...' : ''),
               slideIndex: index,
               presentationId: data.id,
-              relevance: el.content.toLowerCase().startsWith(normalizedQuery) ? 80 : 40,
+              relevance: 30,
             });
-            break; // Only one result per slide
           }
         }
-        
-        // Search notes
-        if (slide.notes?.toLowerCase().includes(normalizedQuery)) {
-          results.push({
-            id: `note-${data.id}-${index}`,
-            type: 'note',
-            title: `Notes: ${data.name} - Slide ${index + 1}`,
-            content: slide.notes.substring(0, 100) + (slide.notes.length > 100 ? '...' : ''),
-            slideIndex: index,
-            presentationId: data.id,
-            relevance: 30,
-          });
-        }
-      });
+      );
     }
   } catch (e) {
     console.error('Search error:', e);

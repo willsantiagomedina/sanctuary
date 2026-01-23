@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
 import {
   Plus,
   Search,
@@ -28,7 +29,6 @@ import {
   DialogTitle, 
   DialogDescription, 
   DialogFooter, 
-  ScrollArea, 
   DropdownMenu, 
   DropdownMenuTrigger, 
   DropdownMenuContent, 
@@ -38,6 +38,8 @@ import {
   CardContent,
   Badge,
   Skeleton,
+  Heading,
+  Text,
 } from '@sanctuary/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -45,12 +47,17 @@ import { PageHeader } from '../components/layout/PageHeader';
 interface Presentation {
   id: string;
   name: string;
-  slides: any[];
+  slides: Slide[];
   createdAt: number;
   updatedAt: number;
   thumbnail?: string;
   title?: string;
 }
+
+type Slide = {
+  background?: { type?: string; value?: string };
+  elements?: Array<{ content?: string }>;
+};
 
 // Skeleton loader for presentation cards
 function PresentationCardSkeleton() {
@@ -73,7 +80,7 @@ function QuickActionCard({
   onClick,
   tone = 'primary',
 }: { 
-  icon: any; 
+  icon: LucideIcon; 
   title: string; 
   description: string; 
   onClick: () => void;
@@ -104,8 +111,12 @@ function QuickActionCard({
           <Icon className="h-4 w-4" />
         </div>
         <div>
-          <h3 className="text-sm font-semibold">{title}</h3>
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <Text variant="small" weight="semibold">
+            {title}
+          </Text>
+          <Text variant="caption">
+            {description}
+          </Text>
         </div>
       </div>
     </button>
@@ -174,7 +185,7 @@ export default function Dashboard() {
               localStorage.setItem(key, JSON.stringify(normalized));
             }
             presToLoad.push(normalized);
-          } catch (e) {
+          } catch {
             console.error('Failed to parse presentation:', key);
           }
         }
@@ -191,7 +202,7 @@ export default function Dashboard() {
 
   // Filtered and sorted presentations
   const filteredPresentations = useMemo(() => {
-    let result = presentations.filter(p =>
+    const result = presentations.filter(p =>
       getPresentationName(p).toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -338,7 +349,9 @@ export default function Dashboard() {
           <section className="mb-10 animate-fade-in">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Recent</h2>
+              <Heading level={3} className="text-lg">
+                Recent
+              </Heading>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {isLoading ? (
@@ -385,15 +398,17 @@ export default function Dashboard() {
 
         {/* All Presentations Section */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <FolderOpen className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">All Presentations</h2>
-              <Badge variant="secondary" className="ml-2">
-                {filteredPresentations.length}
-              </Badge>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                <Heading level={3} className="text-lg">
+                  All Presentations
+                </Heading>
+                <Badge variant="secondary" className="ml-2">
+                  {filteredPresentations.length}
+                </Badge>
+              </div>
             </div>
-          </div>
 
           {/* Controls */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -468,15 +483,15 @@ export default function Dashboard() {
               <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
                 <FolderOpen className="h-10 w-10 text-primary/50" />
               </div>
-              <h3 className="empty-state-title text-xl">
+              <Heading level={3} className="empty-state-title text-xl">
                 {searchQuery ? 'No matching presentations' : 'No presentations yet'}
-              </h3>
-              <p className="empty-state-description mb-6">
+              </Heading>
+              <Text variant="muted" className="empty-state-description mb-6">
                 {searchQuery 
                   ? 'Try a different search term or create a new presentation'
                   : 'Create your first presentation to start building worship slides'
                 }
-              </p>
+              </Text>
               {!searchQuery && (
                 <Button onClick={createNewPresentation} size="lg">
                   <Plus className="h-5 w-5 mr-2" />

@@ -79,7 +79,7 @@ interface Command {
   id: string;
   type: string;
   timestamp: number;
-  data: any;
+  data: unknown;
   slideId?: string;
 }
 

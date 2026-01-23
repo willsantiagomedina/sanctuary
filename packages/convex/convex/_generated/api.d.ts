@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as bible from "../bible.js";
 import type * as bibleImport from "../bibleImport.js";
+import type * as domain_songs from "../domain/songs.js";
 import type * as live from "../live.js";
 import type * as organizations from "../organizations.js";
 import type * as presentations from "../presentations.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   bible: typeof bible;
   bibleImport: typeof bibleImport;
+  "domain/songs": typeof domain_songs;
   live: typeof live;
   organizations: typeof organizations;
   presentations: typeof presentations;

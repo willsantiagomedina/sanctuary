@@ -26,3 +26,4 @@ export * from './components/alert-dialog';
 export * from './components/hover-card';
 export * from './components/context-menu';
 export * from './components/sonner';
+export * from './components/text';

@@ -23,7 +23,6 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContent,
   cn,
 } from '@sanctuary/ui';
 import { useEditorStore, StylePreset, SlideElement } from '../../stores/editor';
