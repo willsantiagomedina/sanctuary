@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { useUser, useClerk, SignedIn, SignedOut } from '@clerk/clerk-react';
+import { useUser, useClerk, useAuth as useClerkAuth, SignedIn, SignedOut } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 import { isClerkConfigured } from '../lib/auth/client';
 import { api } from '../../convex/_generated/api.js';
@@ -33,6 +33,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Clerk-based auth provider
 function ClerkAuthProvider({ children }: { children: ReactNode }) {
   const { user, isLoaded, isSignedIn } = useUser();
+  const { getToken } = useClerkAuth();
   const { signOut } = useClerk();
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
@@ -49,22 +50,45 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
   }, [isLoaded]);
 
   useEffect(() => {
-    if (!isSignedIn || !user) return;
-    const email = user.primaryEmailAddress?.emailAddress;
-    if (!email) {
-      console.error('Clerk user is missing a primary email address.');
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      convexClient.clearAuth();
       return;
     }
-    const name = user.fullName || user.firstName || email;
-    void convexClient.mutation(api.users.createOrGet, {
-      email,
-      name,
-      authId: user.id,
-      preferredLanguage: 'en',
-    }).catch((error) => {
+    convexClient.setAuth(() => getToken({ template: 'convex' }));
+    return () => {
+      convexClient.clearAuth();
+    };
+  }, [getToken, isLoaded, isSignedIn]);
+
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    const syncUser = async () => {
+      const token = await getToken({ template: 'convex' });
+      if (!token) {
+        console.error(
+          'Missing Clerk JWT token. Ensure a "convex" JWT template exists and CLERK_JWT_ISSUER_DOMAIN is set in Convex.'
+        );
+        return;
+      }
+      const email = user.primaryEmailAddress?.emailAddress;
+      if (!email) {
+        console.error('Clerk user is missing a primary email address.');
+        return;
+      }
+      const name = user.fullName || user.firstName || email;
+      await convexClient.mutation(api.users.createOrGet, {
+        email,
+        name,
+        authId: user.id,
+        preferredLanguage: 'en',
+      });
+    };
+
+    void syncUser().catch((error) => {
       console.error('Failed to sync user record:', error);
     });
-  }, [isSignedIn, user]);
+  }, [getToken, isSignedIn, user]);
 
   const logout = () => {
     signOut();

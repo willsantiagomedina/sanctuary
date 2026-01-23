@@ -3,6 +3,7 @@ import { useConvex } from 'convex/react';
 import { bibleCache } from '../lib/bible-cache';
 import { AVAILABLE_TRANSLATIONS, type BibleTranslation, type SupportedLanguage } from '@sanctuary/shared';
 import { api } from '../../convex/_generated/api.js';
+import { convexClient } from '../lib/convex/client';
 import {
   getSeedChapterVerses,
   getSeedBookEntries,
@@ -19,13 +20,14 @@ export function useBibleTranslations(language?: SupportedLanguage) {
   const [serverAvailableIds, setServerAvailableIds] = useState<string[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
   const convex = useConvex();
+  const client = convex || convexClient;
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
         const cached = await bibleCache.listTranslations(language);
-        const serverVersions = await convex.query(api.bible.getVersions, {});
+        const serverVersions = await client.query(api.bible.getVersions, {});
         setServerAvailableIds(serverVersions.map((version: { code: string }) => version.code));
         setServerError(null);
         const availableMap = new Map(AVAILABLE_TRANSLATIONS.map((t) => [t.id, t]));
@@ -82,7 +84,7 @@ export function useBibleTranslations(language?: SupportedLanguage) {
       }
     }
     load();
-  }, [convex, language]);
+  }, [client, language]);
 
   return { translations, loading, serverAvailableIds, serverError };
 }
@@ -91,6 +93,7 @@ export function useBibleBooks(translationId: string) {
   const [books, setBooks] = useState<Array<{ name: string; chapterCount: number }>>([]);
   const [loading, setLoading] = useState(false);
   const convex = useConvex();
+  const client = convex || convexClient;
 
   useEffect(() => {
     async function load() {
@@ -104,7 +107,7 @@ export function useBibleBooks(translationId: string) {
           return;
         }
 
-        const serverBooks = await convex.query(api.bible.getBooksByVersionCode, {
+        const serverBooks = await client.query(api.bible.getBooksByVersionCode, {
           versionCode: translationId,
         });
 
@@ -123,7 +126,7 @@ export function useBibleBooks(translationId: string) {
     }
 
     load();
-  }, [convex, translationId]);
+  }, [client, translationId]);
 
   return { books, loading };
 }
@@ -161,6 +164,7 @@ export function useBibleVerses(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const convex = useConvex();
+  const client = convex || convexClient;
 
   useEffect(() => {
     async function loadVerses() {
@@ -187,7 +191,7 @@ export function useBibleVerses(
           return;
         }
 
-        const serverChapter = await convex.query(api.bible.getChapterByReference, {
+        const serverChapter = await client.query(api.bible.getChapterByReference, {
           versionCode: translationId,
           book: bookAbbrev,
           chapter,
@@ -218,7 +222,7 @@ export function useBibleVerses(
     }
 
     loadVerses();
-  }, [convex, translationId, bookAbbrev, chapter]);
+  }, [client, translationId, bookAbbrev, chapter]);
 
   return { verses, loading, error };
 }
@@ -228,6 +232,7 @@ export function useBibleSearch(translationId: string, query: string) {
   const [results, setResults] = useState<Awaited<ReturnType<typeof bibleCache.searchVerses>>>([]);
   const [searching, setSearching] = useState(false);
   const convex = useConvex();
+  const client = convex || convexClient;
 
   const search = useCallback(async () => {
     if (!query || query.length < 3) {
@@ -250,7 +255,7 @@ export function useBibleSearch(translationId: string, query: string) {
         return;
       }
 
-      const serverResults = await convex.query(api.bible.searchVerses, {
+      const serverResults = await client.query(api.bible.searchVerses, {
         versionCode: translationId,
         query,
       });
@@ -274,7 +279,7 @@ export function useBibleSearch(translationId: string, query: string) {
     } finally {
       setSearching(false);
     }
-  }, [convex, translationId, query]);
+  }, [client, translationId, query]);
 
   useEffect(() => {
     const debounce = setTimeout(() => {
@@ -301,6 +306,7 @@ export function useBibleDownload(translationId: string) {
   });
   const cancelRef = useRef(false);
   const convex = useConvex();
+  const client = convex || convexClient;
 
   useEffect(() => {
     async function loadProgress() {
@@ -370,7 +376,7 @@ export function useBibleDownload(translationId: string) {
       return;
     }
 
-    const serverVersions = await convex.query(api.bible.getVersions, {});
+    const serverVersions = await client.query(api.bible.getVersions, {});
     const version = serverVersions.find((item: { code: string }) => item.code === translationId);
     if (!version) {
       setProgress((p) => ({
@@ -408,7 +414,7 @@ export function useBibleDownload(translationId: string) {
       status: 'downloading',
     });
 
-    const books = await convex.query(api.bible.getBooksByVersionCode, {
+    const books = await client.query(api.bible.getBooksByVersionCode, {
       versionCode: translationId,
     });
 
@@ -426,7 +432,7 @@ export function useBibleDownload(translationId: string) {
           return;
         }
 
-        const chapterData = await convex.query(api.bible.getChapterByReference, {
+        const chapterData = await client.query(api.bible.getChapterByReference, {
           versionCode: translationId,
           book: book.name,
           chapter,
@@ -483,7 +489,7 @@ export function useBibleDownload(translationId: string) {
     });
 
     setProgress((p) => ({ ...p, status: 'complete' }));
-  }, [convex, translationId]);
+  }, [client, translationId]);
 
   const cancelDownload = useCallback(() => {
     cancelRef.current = true;
