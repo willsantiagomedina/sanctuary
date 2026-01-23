@@ -48,28 +48,29 @@ export function useBibleTranslations(language?: SupportedLanguage) {
 
         const available = AVAILABLE_TRANSLATIONS.filter((translation) =>
           language ? translation.language === language : true
-        )
-          .map((translation) => ({
-            ...translation,
-            isDownloaded: false,
-            lastSynced: undefined,
-          }))
-          .filter(
-            (translation) =>
-              serverTranslations.length === 0 ||
-              serverTranslations.some((server) => server.id === translation.id)
+        ).map((translation) => ({
+          ...translation,
+          isDownloaded: false,
+          lastSynced: undefined,
+        }));
+
+        const baseTranslations =
+          serverTranslations.length > 0 ? serverTranslations : available;
+
+        const mergedMap = new Map<string, BibleTranslation>();
+        for (const translation of baseTranslations) {
+          mergedMap.set(translation.id, translation);
+        }
+
+        for (const cachedTranslation of cached) {
+          const existing = mergedMap.get(cachedTranslation.id);
+          mergedMap.set(
+            cachedTranslation.id,
+            existing ? { ...existing, ...cachedTranslation } : cachedTranslation
           );
+        }
 
-        const merged = [...serverTranslations, ...available].map((translation) => {
-          const cachedTranslation = cached.find((item) => item.id === translation.id);
-          return cachedTranslation ? { ...translation, ...cachedTranslation } : translation;
-        });
-
-        const extraCached = cached.filter(
-          (translation) => !merged.some((item) => item.id === translation.id)
-        );
-
-        setTranslations([...merged, ...extraCached]);
+        setTranslations(Array.from(mergedMap.values()));
       } catch (error) {
         console.error('Failed to load translations:', error);
         setServerAvailableIds([]);
