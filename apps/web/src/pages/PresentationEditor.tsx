@@ -21,7 +21,7 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { Button, cn, Input, Label, ScrollArea, Separator, Dialog, DialogContent, DialogHeader, DialogTitle, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent, Slider, Switch } from '@sanctuary/ui';
-import { FONT_FAMILIES, FONT_SIZES, TEXT_COLORS, BACKGROUND_COLORS, GRADIENTS } from '../data/fonts';
+import { TEXT_COLORS, BACKGROUND_COLORS, GRADIENTS } from '../data/fonts';
 import { ALL_SONGS, getSongsByLanguage, type Song, type SongSection } from '../data/songs';
 import { useBibleBooks, useBibleChapters, useBibleSearch, useBibleTranslations, useBibleVerses } from '../hooks/useBible';
 import { getSeedVerseNumbers, getSeedVerseText } from '../lib/bible-seed';

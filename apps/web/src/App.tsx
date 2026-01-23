@@ -4,7 +4,7 @@ import { MainLayout } from './components/layout/MainLayout';
 import { CommandPaletteProvider } from './components/layout/CommandPalette';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useStore } from './stores/app';
-import { GlobalSearchDialog, KeyboardShortcutsDialog, StylePresetsDialog, SlideVariantsDialog } from './components/editor';
+import { GlobalSearchDialog, KeyboardShortcutsDialog, StylePresetsDialog } from './components/editor';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 // Pages

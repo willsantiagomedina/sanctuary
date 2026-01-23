@@ -5,10 +5,9 @@ import type { Presentation, Slide, SlideType } from '@sanctuary/shared';
 // Will be replaced with Convex queries/mutations
 
 export function usePresentation(presentationId: string) {
-  const [presentation, setPresentation] = useState<Presentation | null>(null);
+  const [presentation, _setPresentation] = useState<Presentation | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   const activeSlide = slides[activeSlideIndex] || null;
 
@@ -125,7 +124,6 @@ export function usePresentation(presentationId: string) {
     slides,
     activeSlide,
     activeSlideIndex,
-    isLoading,
     addSlide,
     updateSlide,
     deleteSlide,

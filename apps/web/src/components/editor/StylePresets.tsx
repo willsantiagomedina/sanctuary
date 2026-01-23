@@ -238,7 +238,7 @@ export function StylePresetsDialog({ onApplyPreset, currentStyle }: StylePresets
                 onChange={(e) => setNewPresetName(e.target.value)}
               />
               <div className="flex flex-wrap gap-2">
-                {Object.entries(CATEGORIES).map(([key, { label, color }]) => (
+                {Object.entries(CATEGORIES).map(([key, { label, color: _color }]) => (
                   <Button
                     key={key}
                     variant={newPresetCategory === key ? 'default' : 'outline'}
