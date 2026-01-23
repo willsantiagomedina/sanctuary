@@ -1,6 +1,6 @@
 # Shared Components & UI Library
 
-The Sanctuary project leverages pnpm workspaces to manage shared code and UI components across different applications, promoting reusability, consistency, and efficient development. This section details the contents and purpose of the `shared` and `ui` packages.
+The Sanctuary project leverages Bun workspaces to manage shared code and UI components across different applications, promoting reusability, consistency, and efficient development. This section details the contents and purpose of the `shared` and `ui` packages.
 
 ## `packages/shared`
 

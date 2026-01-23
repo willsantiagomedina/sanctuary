@@ -41,7 +41,7 @@ sanctuary/
 ### Prerequisites
 
 - Node.js 20+
-- pnpm 8+
+- Bun 1.3+ (runtime + workspace package manager for this repository)
 - Convex account
 
 ### Installation
@@ -52,37 +52,37 @@ git clone https://github.com/your-org/sanctuary.git
 cd sanctuary
 
 # Install dependencies
-pnpm install
+bun install
 
 # Set up Convex
 cd packages/convex
-npx convex dev  # This will prompt you to create a project
+bunx convex init  # Follow the prompts to link this workspace to your Convex project
 
 # Copy environment variables
 cp apps/web/.env.example apps/web/.env.local
 # Edit .env.local with your Convex URL
 
 # Start development
-pnpm dev
+bun run dev
 ```
 
 ### Development
 
 ```bash
 # Start all services
-pnpm dev
+bun run dev
 
 # Run web app only
-pnpm --filter @sanctuary/web dev
+bun --cwd apps/web run dev
 
 # Run Convex backend only
-pnpm --filter @sanctuary/convex dev
+bun --cwd packages/convex run dev
 
 # Build for production
-pnpm build
+bun run build
 
 # Type check
-pnpm typecheck
+bun run typecheck
 ```
 
 ## 📖 Bible Versions

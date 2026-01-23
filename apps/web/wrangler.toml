@@ -12,7 +12,7 @@ compatibility_date = "2024-01-01"
 # - VITE_ASSETS_URL
 
 # Build configuration:
-# Build command: pnpm --filter @sanctuary/web build
+# Build command: bun run build
 # Build output directory: apps/web/dist
 # Root directory: /
 

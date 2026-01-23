@@ -6,14 +6,14 @@ Sanctuary is a modern application designed to facilitate **worship presentation,
 
 *   **Frontend**: React (with Vite) for the web application, Electron for the desktop client.
 *   **Backend**: Convex for real-time database, serverless functions, and authentication.
-*   **Monorepo Management**: pnpm workspaces.
+*   **Monorepo Management**: Bun workspaces configured through the root `package.json`.
 *   **Styling**: Tailwind CSS.
 *   **Cloudflare Workers**: For edge computing services (e.g., API proxies).
 *   **TypeScript**: Used across the entire codebase for type safety and improved developer experience.
 
 ## Monorepo Structure
 
-The project is organized as a pnpm monorepo, which helps in managing dependencies and sharing code across different parts of the application. Key directories include:
+The project is organized as a Bun workspace, which helps in managing dependencies and sharing code across different parts of the application. Key directories include:
 
 *   **`apps/`**: Contains the primary applications (web, electron).
 *   **`packages/`**: Houses shared libraries, UI components, and Convex backend code.

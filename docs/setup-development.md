@@ -6,14 +6,14 @@ This guide outlines the steps to set up your local development environment for t
 
 Before you begin, ensure you have the following installed:
 
-*   **Node.js**: Version 18 or higher (LTS recommended).
-*   **pnpm**: A fast, disk space efficient package manager.
-    *   To install pnpm: `npm install -g pnpm`
+*   **Node.js**: Version 20 or higher (LTS recommended).
+*   **Bun**: Runtime + workspace package manager powering this repo.
+    *   To install Bun: `curl -fsSL https://bun.sh/install | bash`
 *   **Git**: For version control.
 *   **Convex CLI**: For interacting with the Convex backend.
-    *   To install Convex CLI: `npm install -g convex-cli` (or `pnpm add -g convex-cli`)
+    *   To install Convex CLI globally (optional): `npm install -g convex-cli` (or `bunx convex`)
 *   **Cloudflare Wrangler CLI**: For developing and deploying Cloudflare Workers.
-    *   To install Wrangler CLI: `npm install -g wrangler` (or `pnpm add -g wrangler`)
+    *   To install Wrangler CLI globally (optional): `npm install -g wrangler` (or `bunx wrangler`)
 
 ## Getting Started
 
@@ -24,9 +24,9 @@ Before you begin, ensure you have the following installed:
     ```
 
 2.  **Install Dependencies:**
-    The project uses pnpm workspaces for dependency management.
+    The project uses Bun workspaces configured in the root `package.json`.
     ```bash
-    pnpm install
+    bun install
     ```
 
 3.  **Convex Setup:**
@@ -34,21 +34,21 @@ Before you begin, ensure you have the following installed:
     *   **Link Local Project:** Link your local `packages/convex` to your Convex project.
         ```bash
         cd packages/convex
-        npx convex init # Follow prompts to link to your project
+        bunx convex init # Follow prompts to link to your project
         # This will create a .convex/config.json file
         cd ../..
         ```
     *   **Push Schema and Functions:**
         ```bash
-        pnpm convex deploy --project <your-convex-project-slug>
+        bun --cwd packages/convex run deploy --project <your-convex-project-slug>
         ```
-        (Note: The actual deploy command might be `npx convex deploy` or defined in `package.json` scripts.)
+        (This wraps the `convex deploy` script defined in `packages/convex/package.json`.)
 
 4.  **Cloudflare Worker Setup:**
-    *   **Login to Cloudflare:**
-        ```bash
-        wrangler login
-        ```
+*   **Login to Cloudflare:**
+    ```bash
+    bunx wrangler login
+    ```
     *   **Configure Worker:** Ensure `workers/bible-proxy/wrangler.toml` is configured correctly for your Cloudflare account.
 
 5.  **Environment Variables:**
@@ -65,7 +65,7 @@ Before you begin, ensure you have the following installed:
 
 ```bash
 cd apps/web
-pnpm dev
+bun run dev
 ```
 The web application should now be running at `http://localhost:5173` (or similar).
 
@@ -73,24 +73,24 @@ The web application should now be running at `http://localhost:5173` (or similar
 
 ```bash
 cd apps/electron
-pnpm dev
+bun run dev
 ```
 This will launch the Electron desktop application.
 
 ### Convex Backend
 
-The Convex backend runs automatically in the cloud. During development, changes to `packages/convex` functions are automatically deployed by the Convex CLI if `convex dev` is running (or `pnpm convex deploy` manually).
+The Convex backend runs automatically in the cloud. During development, changes to `packages/convex` functions are automatically deployed by the Convex CLI if `convex dev` is running (or `bun --cwd packages/convex run deploy` manually).
 
 ```bash
 cd packages/convex
-pnpm convex dev # This command will watch for changes and deploy them
+bun run dev # This command will watch for changes and deploy them
 ```
 
 ### Cloudflare Worker (`workers/bible-proxy`)
 
 ```bash
 cd workers/bible-proxy
-pnpm dev
+bun run dev
 ```
 This will start a local development server for your Cloudflare Worker.
 

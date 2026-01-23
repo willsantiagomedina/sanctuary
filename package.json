@@ -5,16 +5,16 @@
   "description": "Cloud-native worship presentation platform",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @sanctuary/web dev",
-    "dev:convex": "pnpm --filter @sanctuary/convex dev",
-    "dev:electron": "concurrently -k \"pnpm --filter @sanctuary/web dev\" \"sleep 5 && pnpm --filter @sanctuary/electron dev\"",
-    "build": "pnpm --filter @sanctuary/web build",
-    "build:electron": "pnpm --filter @sanctuary/web build && pnpm --filter @sanctuary/electron build",
-    "package": "pnpm build:electron && pnpm --filter @sanctuary/electron package",
-    "package:mac": "pnpm build:electron && pnpm --filter @sanctuary/electron package:mac",
-    "package:win": "pnpm build:electron && pnpm --filter @sanctuary/electron package:win",
-    "lint": "pnpm --filter @sanctuary/web lint",
-    "typecheck": "pnpm -r typecheck"
+    "dev": "bun --cwd apps/web run dev",
+    "dev:convex": "bun --cwd packages/convex run dev",
+    "dev:electron": "bunx concurrently -k \"bun --cwd apps/web run dev\" \"sleep 5 && bun --cwd apps/electron run dev\"",
+    "build": "bun --cwd apps/web run build",
+    "build:electron": "bun --cwd apps/web run build && bun --cwd apps/electron run build",
+    "package": "bun run build:electron && bun --cwd apps/electron run package",
+    "package:mac": "bun run build:electron && bun --cwd apps/electron run package:mac",
+    "package:win": "bun run build:electron && bun --cwd apps/electron run package:win",
+    "lint": "bun --cwd apps/web run lint",
+    "typecheck": "bun --cwd apps/web run typecheck && bun --cwd apps/electron run typecheck && bun --cwd packages/convex run typecheck && bun --cwd packages/shared run typecheck && bun --cwd packages/ui run typecheck"
   },
   "keywords": [
     "worship",
@@ -27,7 +27,7 @@
   "license": "MIT",
   "engines": {
     "node": ">=20",
-    "pnpm": ">=8"
+    "bun": ">=1.3.0"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

@@ -46,4 +46,4 @@ The `packages/convex` directory houses the core backend logic for the Sanctuary 
 
 <h2>Development Workflow</h2>
 
-During development, the Convex CLI (e.g., `pnpm convex dev`) watches for changes in this package, automatically deploying schema and function updates to your Convex development deployment.
+During development, the Convex CLI (e.g., `bun --cwd packages/convex run dev`) watches for changes in this package, automatically deploying schema and function updates to your Convex development deployment.

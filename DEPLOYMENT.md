@@ -89,7 +89,7 @@ Save your BetterAuth URL (e.g., `https://auth.betterauth.com/your-project`)
 2. Create new project → Connect to GitHub
 3. Select the Sanctuary repository
 4. Configure build settings:
-   - **Build command**: `pnpm --filter @sanctuary/web build`
+   - **Build command**: `bun run build`
    - **Build output directory**: `apps/web/dist`
    - **Root directory**: `/`
 
@@ -219,7 +219,7 @@ Configure these DNS records in Cloudflare:
 ### Build Failures
 
 1. Check environment variables are set correctly
-2. Verify pnpm lockfile is up to date
+2. Verify `bun.lock` is up to date
 3. Check Cloudflare Pages build logs
 
 ### Auth Issues

@@ -53,6 +53,6 @@ Convex functions (queries, mutations, actions) are critical parts of the backend
 
 Refer to the `package.json` files in each application and package for specific test scripts. Common commands might include:
 
-*   `pnpm test` (at the root or within a package)
-*   `pnpm jest`
-*   `pnpm vitest`
+*   `bun run test` (at the root or within a package)
+*   `bun run jest`
+*   `bun run vitest`

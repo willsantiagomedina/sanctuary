@@ -22,12 +22,12 @@ We welcome contributions to the Sanctuary project! By following these guidelines
     *   Update documentation as necessary (e.g., `docs/`).
 6.  **Run Tests**: Before committing, ensure all tests pass.
     ```bash
-    pnpm test # Or specific test commands for affected packages
+    bun run test # Or specific test commands for affected packages
     ```
 7.  **Lint and Format**: Ensure your code conforms to the project's linting and formatting rules.
     ```bash
-    pnpm lint # (Assuming a lint script is available)
-    pnpm format # (Assuming a format script is available)
+    bun run lint # (Assuming a lint script is available)
+    bun run format # (Assuming a format script is available)
     ```
 8.  **Commit Your Changes**: Write a clear and descriptive commit message. Follow conventional commit guidelines if the project uses them.
     ```bash
