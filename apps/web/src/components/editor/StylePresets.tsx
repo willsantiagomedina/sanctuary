@@ -90,12 +90,6 @@ export function StylePresetsDialog({ onApplyPreset, currentStyle }: StylePresets
     removeStylePreset(id);
   };
   
-  // Rename preset
-  const handleRename = (id: string, name: string) => {
-    updateStylePreset(id, { name });
-    setEditingPreset(null);
-  };
-  
   return (
     <Dialog open={showPresetsDialog} onOpenChange={setShowPresetsDialog}>
       <DialogContent className="max-w-2xl max-h-[80vh]">
@@ -109,7 +103,7 @@ export function StylePresetsDialog({ onApplyPreset, currentStyle }: StylePresets
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start">
             <TabsTrigger value="all">All</TabsTrigger>
-            {Object.entries(CATEGORIES).map(([key, { label }]) => (
+                {Object.entries(CATEGORIES).map(([key, { label, color: _color }]) => (
               <TabsTrigger key={key} value={key}>
                 {label}
               </TabsTrigger>

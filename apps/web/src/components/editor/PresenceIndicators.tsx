@@ -100,7 +100,7 @@ interface PresenceAvatarsProps {
 }
 
 export function PresenceAvatars({ maxVisible = 5, size = 'md' }: PresenceAvatarsProps) {
-  const { collaborators, localUser } = useEditorStore();
+  const { collaborators } = useEditorStore();
   
   // Filter out inactive users (> 30 seconds)
   const activeUsers = useMemo(() => {

@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import {
   Undo2,
   Redo2,
-  Type,
   Bold,
   Italic,
   Underline,
