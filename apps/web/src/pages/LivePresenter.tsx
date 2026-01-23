@@ -79,7 +79,6 @@ export default function LivePresenter() {
   const currentIndexRef = useRef(0);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [rotationState, setRotationState] = useState<RotationState>({
     active: false,
     groupId: null,
