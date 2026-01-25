@@ -14,6 +14,118 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_auth_id", ["authId"]),
 
+  user: defineTable({
+    id: v.string(),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+    email: v.string(),
+    emailVerified: v.boolean(),
+    name: v.string(),
+    image: v.optional(v.string()),
+  })
+    .index("by_id", ["id"])
+    .index("by_email", ["email"]),
+
+  session: defineTable({
+    id: v.string(),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+    userId: v.string(),
+    expiresAt: v.string(),
+    token: v.string(),
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+  })
+    .index("by_id", ["id"])
+    .index("by_user_id", ["userId"])
+    .index("by_token", ["token"]),
+
+  account: defineTable({
+    id: v.string(),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+    providerId: v.string(),
+    accountId: v.string(),
+    userId: v.string(),
+    accessToken: v.optional(v.string()),
+    refreshToken: v.optional(v.string()),
+    idToken: v.optional(v.string()),
+    accessTokenExpiresAt: v.optional(v.string()),
+    refreshTokenExpiresAt: v.optional(v.string()),
+    scope: v.optional(v.string()),
+    password: v.optional(v.string()),
+  })
+    .index("by_id", ["id"])
+    .index("by_user_id", ["userId"])
+    .index("by_provider_account", ["providerId", "accountId"]),
+
+  verification: defineTable({
+    id: v.string(),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+    value: v.string(),
+    expiresAt: v.string(),
+    identifier: v.string(),
+  })
+    .index("by_id", ["id"])
+    .index("by_identifier", ["identifier"]),
+
+  jwks: defineTable({
+    id: v.string(),
+    publicKey: v.string(),
+    privateKey: v.string(),
+    createdAt: v.string(),
+    expiresAt: v.optional(v.string()),
+  }).index("by_id", ["id"]),
+
+  oauthApplication: defineTable({
+    id: v.string(),
+    name: v.string(),
+    icon: v.optional(v.string()),
+    metadata: v.optional(v.string()),
+    clientId: v.string(),
+    clientSecret: v.optional(v.string()),
+    redirectUrls: v.string(),
+    type: v.string(),
+    disabled: v.optional(v.boolean()),
+    userId: v.optional(v.string()),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_id", ["id"])
+    .index("by_client_id", ["clientId"])
+    .index("by_user_id", ["userId"]),
+
+  oauthAccessToken: defineTable({
+    id: v.string(),
+    accessToken: v.string(),
+    refreshToken: v.string(),
+    accessTokenExpiresAt: v.string(),
+    refreshTokenExpiresAt: v.string(),
+    clientId: v.string(),
+    userId: v.optional(v.string()),
+    scopes: v.string(),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_id", ["id"])
+    .index("by_access_token", ["accessToken"])
+    .index("by_refresh_token", ["refreshToken"])
+    .index("by_client_id", ["clientId"])
+    .index("by_user_id", ["userId"]),
+
+  oauthConsent: defineTable({
+    id: v.string(),
+    clientId: v.string(),
+    userId: v.string(),
+    scopes: v.string(),
+    consentGiven: v.boolean(),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_id", ["id"])
+    .index("by_client_user", ["clientId", "userId"]),
+
   userPreferences: defineTable({
     userId: v.id("users"),
     theme: v.union(v.literal("light"), v.literal("dark"), v.literal("system")),

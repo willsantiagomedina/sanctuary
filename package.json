@@ -30,10 +30,18 @@
     "bun": ">=1.3.0"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "@types/bun": "latest"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "module": "index.ts",
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "zod": "3.0.0"
+  }
 }
