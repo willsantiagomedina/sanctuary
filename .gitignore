@@ -39,3 +39,4 @@ release/
 # Misc
 *.tsbuildinfo
 .eslintcache
+.aider*

@@ -4,12 +4,12 @@ import {
   ChevronLeft,
   ChevronRight,
   MonitorPlay,
-  Play,
   Pause,
+  Play,
   RotateCcw,
   Timer,
 } from 'lucide-react';
-import { Button, Card, CardContent, CardHeader, CardTitle, ScrollArea, cn } from '@sanctuary/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, cn } from '@sanctuary/ui';
 
 interface SlideElementStyle {
   fontFamily?: string;
@@ -202,6 +202,7 @@ export default function PresenterView() {
   const rotationStateRef = useRef(rotationState);
   const rotationDirectionRef = useRef<1 | -1>(1);
   const [selectedRotationGroupId, setSelectedRotationGroupId] = useState<string | null>(null);
+  const [jumpValue, setJumpValue] = useState('');
 
   const controlKey = id ? `presentation-control-${id}` : null;
   const rotationKey = id ? `presentation-rotation-${id}` : null;
@@ -441,6 +442,20 @@ export default function PresenterView() {
     setCurrentIndex(idx => Math.max(idx - 1, 0));
   }, [stopRotationOnInteraction]);
 
+  const goToSlide = useCallback((index: number) => {
+    stopRotationOnInteraction();
+    setCurrentIndex(index);
+  }, [stopRotationOnInteraction]);
+
+  const handleJump = useCallback(() => {
+    if (!presentation) return;
+    const parsed = Number.parseInt(jumpValue, 10);
+    if (Number.isNaN(parsed)) return;
+    const clamped = Math.min(Math.max(parsed, 1), presentation.slides.length) - 1;
+    setJumpValue('');
+    goToSlide(clamped);
+  }, [jumpValue, presentation, goToSlide]);
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowRight':
@@ -452,7 +467,6 @@ export default function PresenterView() {
         break;
       case 'ArrowLeft':
       case 'PageUp':
-      case 'Backspace':
         e.preventDefault();
         goPrev();
         break;
@@ -498,9 +512,23 @@ export default function PresenterView() {
         </Button>
         <div>
           <div className="text-sm font-semibold">{presentation.name}</div>
-          <div className="text-[11px] text-muted-foreground">Presenter view</div>
+          <div className="text-[11px] text-muted-foreground">Presenter grid</div>
+        </div>
+        <div className="ml-4 text-xs text-muted-foreground">
+          Slide {currentIndex + 1} of {presentation.slides.length}
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={goPrev} disabled={currentIndex === 0}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goNext}
+            disabled={currentIndex === presentation.slides.length - 1}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
           <Button variant="outline" size="sm" onClick={openPresentationWindow}>
             <MonitorPlay className="h-4 w-4 mr-2" />
             Open Presentation
@@ -508,178 +536,216 @@ export default function PresenterView() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-auto p-6">
-        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6 items-start">
-          <div className="flex flex-col gap-4">
-            <SlidePreview slide={currentSlide} className="shadow-xl" />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={goPrev} disabled={currentIndex === 0}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={goNext}
-                  disabled={currentIndex === presentation.slides.length - 1}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Slide {currentIndex + 1} of {presentation.slides.length}
-              </div>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 p-6">
+          <div className="overflow-auto lg:pr-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+              {presentation.slides.map((slide, index) => {
+                const isActive = index === currentIndex;
+                return (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    className={cn(
+                      "group text-left rounded-lg overflow-hidden border transition-all",
+                      isActive ? "border-primary ring-2 ring-primary/30" : "border-border/60 hover:border-primary/60"
+                    )}
+                    onClick={() => goToSlide(index)}
+                  >
+                    <SlidePreview
+                      slide={slide}
+                      className={cn("shadow-none rounded-none border-0")}
+                    />
+                    <div className="flex items-center justify-between px-2 py-1.5 bg-card/80">
+                      <span
+                        className={cn(
+                          "text-[11px] font-medium",
+                          isActive ? "text-primary" : "text-muted-foreground"
+                        )}
+                      >
+                        Slide {index + 1}
+                      </span>
+                      {isActive && <span className="text-[10px] font-semibold text-primary">Live</span>}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Next Slide</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {nextSlide ? (
-                  <SlidePreview slide={nextSlide} className="shadow-none" />
-                ) : (
-                  <div className="aspect-video rounded-lg border border-dashed border-border/60 flex items-center justify-center text-xs text-muted-foreground">
-                    End of deck
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Speaker Notes</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <ScrollArea className="h-32 pr-2">
-                  <p className="text-sm text-foreground whitespace-pre-wrap">
-                    {currentSlide?.notes?.trim() || 'No notes for this slide.'}
-                  </p>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Timer className="h-4 w-4" />
-                  Timer
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                <div className="text-3xl font-semibold tracking-tight">{formatTime(timerElapsed)}</div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setTimerRunning(r => !r)}>
-                    {timerRunning ? <Pause className="h-4 w-4 mr-1.5" /> : <Play className="h-4 w-4 mr-1.5" />}
-                    {timerRunning ? 'Pause' : 'Start'}
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => { setTimerRunning(false); setTimerElapsed(0); }}>
-                    <RotateCcw className="h-4 w-4 mr-1.5" />
-                    Reset
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Rotation Groups</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                {rotationGroups.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-border/60 p-3 text-xs text-muted-foreground">
-                    Create rotation groups in the editor to automate slide sequences.
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex flex-wrap gap-2">
-                      {rotationGroups.map(group => {
-                        const isSelected = group.id === selectedRotationGroupId;
-                        const isRunning = rotationState.active && rotationState.groupId === group.id;
-                        return (
-                          <button
-                            key={group.id}
-                            className={cn(
-                              "px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors",
-                              isSelected ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"
-                            )}
-                            onClick={() => setSelectedRotationGroupId(group.id)}
-                          >
-                            {group.name}
-                            {isRunning && <span className="ml-1">•</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {selectedRotationGroup ? (
-                      <div className="rounded-lg border border-border/60 p-3 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm font-medium">{selectedRotationGroup.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {selectedRotationGroup.slideIds.length} slides
-                          </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {selectedRotationGroup.intervalSeconds}s ·{' '}
-                          {selectedRotationGroup.mode === 'ping-pong' ? 'Ping-pong' : 'Loop'} ·{' '}
-                          {selectedRotationGroup.loop ? 'Repeat' : 'Once'}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            onClick={startRotation}
-                            disabled={rotationState.active && rotationState.groupId === selectedRotationGroup.id}
-                          >
-                            <Play className="h-4 w-4 mr-1.5" />
-                            Start
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={stopRotation}
-                            disabled={!rotationState.active}
-                          >
-                            <Pause className="h-4 w-4 mr-1.5" />
-                            Stop
-                          </Button>
-                        </div>
-                        {selectedRotationIndices.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {selectedRotationIndices.map((index, idx) => {
-                              const isActive = currentIndex === index;
-                              return (
-                                <span
-                                  key={`${selectedRotationGroup.id}-${idx}`}
-                                  className={cn(
-                                    "h-7 w-7 rounded-md text-[11px] font-medium flex items-center justify-center",
-                                    isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                                  )}
-                                >
-                                  {index + 1}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
-                        {rotationState.active && rotationState.groupId === selectedRotationGroup.id && (
-                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                            <span className="h-2 w-2 rounded-full bg-primary" />
-                            Live rotation running
-                          </div>
-                        )}
-                      </div>
+          <div className="overflow-auto">
+            <div className="flex flex-col gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Live Preview</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-3">
+                  <SlidePreview slide={currentSlide} className="shadow-none" />
+                  <div>
+                    <div className="text-[11px] text-muted-foreground mb-2">Next Slide</div>
+                    {nextSlide ? (
+                      <SlidePreview slide={nextSlide} className="shadow-none" />
                     ) : (
-                      <div className="text-xs text-muted-foreground">
-                        Select a rotation group to view details.
+                      <div className="aspect-video rounded-lg border border-dashed border-border/60 flex items-center justify-center text-xs text-muted-foreground">
+                        End of deck
                       </div>
                     )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Timer className="h-4 w-4" />
+                    Timer
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-3">
+                  <div className="text-3xl font-semibold tracking-tight">{formatTime(timerElapsed)}</div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setTimerRunning(r => !r)}>
+                      {timerRunning ? <Pause className="h-4 w-4 mr-1.5" /> : <Play className="h-4 w-4 mr-1.5" />}
+                      {timerRunning ? 'Pause' : 'Start'}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setTimerRunning(false); setTimerElapsed(0); }}>
+                      <RotateCcw className="h-4 w-4 mr-1.5" />
+                      Reset
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Quick Jump</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={jumpValue}
+                      onChange={(e) => setJumpValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleJump();
+                        }
+                      }}
+                      placeholder="Slide #"
+                    />
+                    <Button size="sm" onClick={handleJump}>Go</Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => goToSlide(0)}>First</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goToSlide(presentation.slides.length - 1)}
+                    >
+                      Last
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Rotation Groups</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-3">
+                  {rotationGroups.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border/60 p-3 text-xs text-muted-foreground">
+                      Create rotation groups in the editor to automate slide sequences.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {rotationGroups.map(group => {
+                          const isSelected = group.id === selectedRotationGroupId;
+                          const isRunning = rotationState.active && rotationState.groupId === group.id;
+                          return (
+                            <button
+                              key={group.id}
+                              className={cn(
+                                "px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors",
+                                isSelected ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"
+                              )}
+                              onClick={() => setSelectedRotationGroupId(group.id)}
+                            >
+                              {group.name}
+                              {isRunning && <span className="ml-1">•</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {selectedRotationGroup ? (
+                        <div className="rounded-lg border border-border/60 p-3 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-medium">{selectedRotationGroup.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {selectedRotationGroup.slideIds.length} slides
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {selectedRotationGroup.intervalSeconds}s ·{' '}
+                            {selectedRotationGroup.mode === 'ping-pong' ? 'Ping-pong' : 'Loop'} ·{' '}
+                            {selectedRotationGroup.loop ? 'Repeat' : 'Once'}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              onClick={startRotation}
+                              disabled={rotationState.active && rotationState.groupId === selectedRotationGroup.id}
+                            >
+                              <Play className="h-4 w-4 mr-1.5" />
+                              Start
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={stopRotation}
+                              disabled={!rotationState.active}
+                            >
+                              <Pause className="h-4 w-4 mr-1.5" />
+                              Stop
+                            </Button>
+                          </div>
+                          {selectedRotationIndices.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {selectedRotationIndices.map((index, idx) => {
+                                const isActive = currentIndex === index;
+                                return (
+                                  <span
+                                    key={`${selectedRotationGroup.id}-${idx}`}
+                                    className={cn(
+                                      "h-7 w-7 rounded-md text-[11px] font-medium flex items-center justify-center",
+                                      isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                    )}
+                                  >
+                                    {index + 1}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {rotationState.active && rotationState.groupId === selectedRotationGroup.id && (
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                              <span className="h-2 w-2 rounded-full bg-primary" />
+                              Live rotation running
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">
+                          Select a rotation group to view details.
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>

@@ -1,7 +1,5 @@
 import { useRef } from 'react';
 import {
-  Undo2,
-  Redo2,
   Bold,
   Italic,
   Underline,
@@ -19,10 +17,6 @@ import {
   ArrowDownToLine,
   Lock,
   Trash2,
-  Copy,
-  ZoomIn,
-  ZoomOut,
-  Play,
   Upload,
   Link,
 } from 'lucide-react';
@@ -57,12 +51,6 @@ export interface FormattingToolbarProps {
   opacity?: number;
   borderRadius?: number;
   
-  // History
-  canUndo: boolean;
-  canRedo: boolean;
-  onUndo: () => void;
-  onRedo: () => void;
-  
   // Text formatting
   onFontFamilyChange: (font: string) => void;
   onFontSizeChange: (size: number) => void;
@@ -84,7 +72,6 @@ export interface FormattingToolbarProps {
   onSendToBack: () => void;
   
   // Element actions
-  onDuplicate: () => void;
   onDelete: () => void;
   onLock: () => void;
   
@@ -92,11 +79,6 @@ export interface FormattingToolbarProps {
   onImageUpload: (file: File) => void;
   onImageUrlInsert: (url: string) => void;
   
-  // Zoom & Present
-  zoom: number;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onPresent: () => void;
 }
 
 // Color swatch button
@@ -246,9 +228,6 @@ export function FormattingToolbar(props: FormattingToolbarProps) {
     backgroundColor,
     opacity = 1,
     borderRadius = 0,
-    canUndo,
-    canRedo,
-    zoom,
   } = props;
   
   const isBold = fontWeight === '700';
@@ -256,24 +235,6 @@ export function FormattingToolbar(props: FormattingToolbarProps) {
   
   return (
     <div className="h-11 border-b bg-card/80 backdrop-blur-sm flex items-center px-3 gap-1">
-      {/* History controls - always visible */}
-      <ToolbarButton
-        icon={Undo2}
-        label="Undo"
-        shortcut="⌘Z"
-        onClick={props.onUndo}
-        disabled={!canUndo}
-      />
-      <ToolbarButton
-        icon={Redo2}
-        label="Redo"
-        shortcut="⌘⇧Z"
-        onClick={props.onRedo}
-        disabled={!canRedo}
-      />
-      
-      <Separator orientation="vertical" className="h-6 mx-2" />
-      
       {/* Text formatting - visible when text/verse selected */}
       {(selectedElementType === 'text' || selectedElementType === 'verse') && (
         <>
@@ -574,12 +535,6 @@ export function FormattingToolbar(props: FormattingToolbarProps) {
           </Popover>
           
           <ToolbarButton
-            icon={Copy}
-            label="Duplicate"
-            shortcut="⌘D"
-            onClick={props.onDuplicate}
-          />
-          <ToolbarButton
             icon={Lock}
             label="Lock"
             onClick={props.onLock}
@@ -595,31 +550,6 @@ export function FormattingToolbar(props: FormattingToolbarProps) {
       
       {/* Spacer */}
       <div className="flex-1" />
-      
-      {/* Zoom controls */}
-      <div className="flex items-center gap-1 bg-muted rounded-md px-1">
-        <button 
-          className="h-7 w-7 flex items-center justify-center rounded hover:bg-accent/50"
-          onClick={props.onZoomOut}
-        >
-          <ZoomOut className="h-3.5 w-3.5" />
-        </button>
-        <span className="text-xs w-12 text-center">{zoom}%</span>
-        <button 
-          className="h-7 w-7 flex items-center justify-center rounded hover:bg-accent/50"
-          onClick={props.onZoomIn}
-        >
-          <ZoomIn className="h-3.5 w-3.5" />
-        </button>
-      </div>
-      
-      <Separator orientation="vertical" className="h-6 mx-2" />
-      
-      {/* Present button */}
-      <Button onClick={props.onPresent} size="sm" className="shadow-sm">
-        <Play className="h-4 w-4 mr-1.5" />
-        Present
-      </Button>
     </div>
   );
 }

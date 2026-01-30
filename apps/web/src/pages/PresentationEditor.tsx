@@ -11,6 +11,8 @@ import {
   ChevronUp,
   MoreHorizontal,
   RotateCcw,
+  Undo2,
+  Redo2,
   Upload,
   Link,
   X,
@@ -1672,6 +1674,12 @@ export default function PresentationEditor() {
         }
       }
 
+      if (isMod && key === 'backspace') {
+        e.preventDefault();
+        deleteSlide(currentSlideIndex);
+        return;
+      }
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedElements.length > 0) {
           e.preventDefault();
@@ -1839,6 +1847,7 @@ export default function PresentationEditor() {
     deleteSelection,
     duplicateSelection,
     duplicateSlide,
+    deleteSlide,
     addSlide,
     addElement,
     copySelection,
@@ -2072,6 +2081,61 @@ export default function PresentationEditor() {
           onShowHelp={() => window.open('/help', '_blank')}
         />
 
+        <Separator orientation="vertical" className="h-6 mx-1" />
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={undo}
+            disabled={undoStack.length === 0}
+            title="Undo (⌘Z)"
+          >
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={redo}
+            disabled={redoStack.length === 0}
+            title="Redo (⌘⇧Z)"
+          >
+            <Redo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              if (selectedElements.length > 0) {
+                duplicateSelection();
+              } else {
+                duplicateSlide(currentSlideIndex);
+              }
+            }}
+            title="Duplicate (⌘D)"
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <Separator orientation="vertical" className="h-6 mx-1" />
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Zoom</span>
+          <Slider
+            value={[zoom]}
+            min={25}
+            max={200}
+            step={5}
+            className="w-32"
+            onValueChange={([value]) => setZoom(value)}
+          />
+          <span className="text-xs w-10 text-right text-muted-foreground">{zoom}%</span>
+        </div>
+
         <div className="flex-1" />
 
         {/* Right side controls */}
@@ -2112,10 +2176,6 @@ export default function PresentationEditor() {
         backgroundColor={selectedElement?.style.backgroundColor}
         opacity={selectedElement?.style.opacity}
         borderRadius={selectedElement?.style.borderRadius}
-        canUndo={undoStack.length > 0}
-        canRedo={redoStack.length > 0}
-        onUndo={undo}
-        onRedo={redo}
         onFontFamilyChange={(font) => selectedElement && updateElementStyle(selectedElement.id, { fontFamily: font })}
         onFontSizeChange={(size) => selectedElement && updateElementStyle(selectedElement.id, { fontSize: size })}
         onBoldToggle={() => selectedElement && updateElementStyle(selectedElement.id, { 
@@ -2136,15 +2196,10 @@ export default function PresentationEditor() {
         onSendBackward={sendBackward}
         onBringToFront={bringToFront}
         onSendToBack={sendToBack}
-        onDuplicate={duplicateSelection}
         onDelete={deleteSelection}
         onLock={toggleLockSelection}
         onImageUpload={handleImageUpload}
         onImageUrlInsert={handleImageUrlInsert}
-        zoom={zoom}
-        onZoomIn={() => setZoom(Math.min(200, zoom + 25))}
-        onZoomOut={() => setZoom(Math.max(25, zoom - 25))}
-        onPresent={handlePresentClick}
       />
 
       <div className="flex-1 flex overflow-hidden">

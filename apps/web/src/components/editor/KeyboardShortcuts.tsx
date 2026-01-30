@@ -20,6 +20,7 @@ const ALL_SHORTCUTS = {
     { keys: ['meta', 'x'], label: 'Cut', description: 'Cut selection' },
     { keys: ['meta', 'a'], label: 'Select All', description: 'Select all elements' },
     { keys: ['meta', 'shift', 'b'], label: 'Insert Verse', description: 'Open Bible verse selector' },
+    { keys: ['meta', 'backspace'], label: 'Delete Slide', description: 'Delete current slide' },
     { keys: ['delete'], label: 'Delete', description: 'Delete selection' },
     { keys: ['escape'], label: 'Deselect', description: 'Clear selection' },
     { keys: ['arrowup'], label: 'Nudge Up', description: 'Move element up 1px' },
