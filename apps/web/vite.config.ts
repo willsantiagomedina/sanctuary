@@ -2,6 +2,11 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+console.log('=== BUILD TIME ENV ===')
+console.log('VITE_CLERK_PUBLISHABLE_KEY:', process.env.VITE_CLERK_PUBLISHABLE_KEY?.slice(0, 10))
+console.log('All VITE_ vars:', Object.keys(process.env).filter(k => k.startsWith('VITE_')))
+console.log('======================')
+
 export default defineConfig(({ mode }) => {
   // Load env vars explicitly — critical for Cloudflare
   const env = loadEnv(mode, process.cwd(), 'VITE_')
