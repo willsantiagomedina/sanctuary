@@ -13,16 +13,16 @@ import {
   HelpCircle,
   Settings as SettingsIcon,
 } from 'lucide-react';
-import { 
-  Button, 
-  cn, 
-  Input, 
-  Label, 
-  Separator, 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
+import {
+  Button,
+  cn,
+  Input,
+  Label,
+  Separator,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   CardDescription,
   Switch,
   Badge,
@@ -67,7 +67,7 @@ function BibleVersionRow({
   };
 
   return (
-    <div 
+    <div
       className={cn(
         "flex flex-col gap-3 p-4 rounded-xl transition-colors",
         isDownloaded ? "bg-primary/5 border border-primary/20" : "bg-secondary/50"
@@ -216,23 +216,23 @@ export default function Settings() {
             <div className="grid gap-4">
               <div>
                 <Label htmlFor="name" className="text-sm font-medium">Display Name</Label>
-                <Input 
-                  id="name" 
-                  defaultValue={user?.name || ''} 
+                <Input
+                  id="name"
+                  defaultValue={user?.name || ''}
                   placeholder="Your name"
                   className="mt-1.5"
                 />
               </div>
               <div>
                 <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
-                <Input 
-                  id="email" 
-                  defaultValue={user?.email || ''} 
+                <Input
+                  id="email"
+                  defaultValue={user?.email || ''}
                   disabled
                   className="mt-1.5"
                 />
                 <Text variant="caption" className="mt-1">
-                  Contact support to change your email
+                  Contact support for an email change
                 </Text>
               </div>
             </div>
@@ -293,7 +293,7 @@ export default function Settings() {
               ))}
             </div>
             <Text variant="caption" className="mt-4">
-              {theme === 'system' 
+              {theme === 'system'
                 ? `Using system preference (currently ${resolvedTheme} mode)`
                 : `Using ${theme} mode`
               }
@@ -316,8 +316,8 @@ export default function Settings() {
                 <Label className="text-sm font-medium">Auto-save presentations</Label>
                 <Text variant="caption">Automatically save changes as you work</Text>
               </div>
-              <Switch 
-                checked={autoSave} 
+              <Switch
+                checked={autoSave}
                 onCheckedChange={(checked) => {
                   setAutoSave(checked);
                   showSaved();
@@ -330,8 +330,8 @@ export default function Settings() {
                 <Label className="text-sm font-medium">Desktop notifications</Label>
                 <Text variant="caption">Get notified about important updates</Text>
               </div>
-              <Switch 
-                checked={notifications} 
+              <Switch
+                checked={notifications}
                 onCheckedChange={(checked) => {
                   setNotifications(checked);
                   showSaved();
@@ -424,7 +424,7 @@ export default function Settings() {
           <CardContent>
             <div className="grid gap-2">
               {keyboardShortcuts.map((shortcut, idx) => (
-                <div 
+                <div
                   key={idx}
                   className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-secondary/50 transition-colors"
                 >
@@ -433,7 +433,7 @@ export default function Settings() {
                   </Text>
                   <div className="flex items-center gap-1">
                     {shortcut.keys.map((key, i) => (
-                      <kbd 
+                      <kbd
                         key={i}
                         className="px-2 py-1 text-xs font-mono bg-muted rounded border shadow-sm"
                       >
